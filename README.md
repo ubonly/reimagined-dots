@@ -1,6 +1,6 @@
 # Reimagined Dots
 
-A ChromeOS-inspired Quickshell config for Hyprland on Arch Linux. It includes a floating dock, app launcher, quick settings, notifications, clipboard history, media controls, screen capture and recording, wallpaper selection, and a settings window with dynamic Material You theming.
+A ChromeOS-inspired Quickshell config for Hyprland on Arch Linux. The repository mirrors the real `~/.config` layout, so the Quickshell files live under `.config/quickshell/`. It includes a floating dock, app launcher, quick settings, notifications, clipboard history, media controls, screen capture and recording, wallpaper selection, and a settings window with dynamic Material You theming.
 
 ## Installation
 
@@ -8,12 +8,10 @@ A ChromeOS-inspired Quickshell config for Hyprland on Arch Linux. It includes a 
 
 ```bash
 git clone https://github.com/ubonly/reimagined-dots.git ~/reimagined-dots
-cd ~/reimagined-dots
-chmod +x install.sh
-./install.sh
+rsync -a ~/reimagined-dots/.config/quickshell/ ~/.config/quickshell/
 ```
 
-The installer detects your AUR helper, installs dependencies, copies the config to `~/.config/quickshell`, and adds the required Hyprland rules.
+The repository is meant to be copied into place as-is. Add the required Hyprland rules manually if you have not done that already.
 
 ### Manual Setup
 
@@ -73,43 +71,46 @@ quickshell -p ~/.config/quickshell
 ## File Structure
 
 ```text
-~/.config/quickshell/
-├── shell.qml
-├── BackgroundWindow.qml
-├── AppLauncher.qml
-├── AppButton.qml
-├── WorkspaceButton.qml
-├── WorkspaceAppButton.qml
-├── QuickSettingsPopup.qml
-├── ScreenCapture.qml
-├── ClipboardPopup.qml
-├── MediaPopup.qml
-├── NotificationsPopup.qml
-├── NotificationCenterPopup.qml
-├── SettingsWindow.qml
-├── WallpaperSelectorWindow.qml
-├── ClockWidget.qml
-├── DockSeparator.qml
-├── TrayIcon.qml
-├── Theme/
-│   └── Theme.qml
-├── list-apps.py
-├── cliphist.py
-├── clipboard_pin.py
-├── list-recent.py
-├── hypr-events.py
-├── bt_list.sh
-├── set_wallpaper.sh
-├── random_konachan.sh
-├── random_osu.sh
-├── toggle-launcher.sh
-├── toggle-clipboard.sh
-├── colors.json
-├── wallpaper_path.txt
-├── theme_mode.txt
-├── apps.json
-├── recent-apps.json
-└── assets/icons/
+reimagined-dots/
+├── README.md
+└── .config/
+    └── quickshell/
+        ├── shell.qml
+        ├── BackgroundWindow.qml
+        ├── AppLauncher.qml
+        ├── AppButton.qml
+        ├── WorkspaceButton.qml
+        ├── WorkspaceAppButton.qml
+        ├── QuickSettingsPopup.qml
+        ├── ScreenCapture.qml
+        ├── ClipboardPopup.qml
+        ├── MediaPopup.qml
+        ├── NotificationsPopup.qml
+        ├── NotificationCenterPopup.qml
+        ├── SettingsWindow.qml
+        ├── WallpaperSelectorWindow.qml
+        ├── ClockWidget.qml
+        ├── DockSeparator.qml
+        ├── TrayIcon.qml
+        ├── Theme/
+        │   └── Theme.qml
+        ├── list-apps.py
+        ├── cliphist.py
+        ├── clipboard_pin.py
+        ├── list-recent.py
+        ├── hypr-events.py
+        ├── bt_list.sh
+        ├── set_wallpaper.sh
+        ├── random_konachan.sh
+        ├── random_osu.sh
+        ├── toggle-launcher.sh
+        ├── toggle-clipboard.sh
+        ├── colors.json
+        ├── wallpaper_path.txt
+        ├── theme_mode.txt
+        ├── apps.json
+        ├── recent-apps.json
+        └── assets/icons/
 ```
 
 ## Customization
