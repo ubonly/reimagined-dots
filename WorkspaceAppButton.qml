@@ -1,0 +1,103 @@
+// WorkspaceAppButton.qml
+// Чисто динамический воркспейс:
+//   пусто → точка
+//   открыто окно → иконка этого окна (из class)
+
+import Quickshell
+import Quickshell.Hyprland
+import Qt5Compat.GraphicalEffects
+import QtQuick
+import "Theme"
+
+Item {
+    id: root
+
+    property int wsId: 1
+    property var clientsByWs: ({})
+    property var clientIconsByWs: ({})
+
+    readonly property bool   isFocused:   Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace !== undefined && Hyprland.focusedWorkspace.id === wsId
+    readonly property string windowClass: (clientsByWs && clientsByWs[wsId]) ? clientsByWs[wsId] : ""
+    readonly property string iconPath:    (clientIconsByWs && clientIconsByWs[wsId]) ? clientIconsByWs[wsId] : ""
+    readonly property bool   hasWindows:  windowClass !== ""
+
+    implicitWidth:  52
+    implicitHeight: 52
+
+    // ── ПУСТО: точка ─────────────────────────────────────────────────────
+    Rectangle {
+        anchors.centerIn: parent
+        visible: !root.hasWindows
+        width:  root.isFocused ? 10 : 6
+        height: width
+        radius: width / 2
+        color:  root.isFocused
+                ? Theme.primary
+                : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38)
+        Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        Behavior on color { ColorAnimation  { duration: 180 } }
+    }
+
+    // ── ЕСТЬ ОКНО: иконка ────────────────────────────────────────────────
+    Item {
+        anchors.centerIn: parent
+        visible: root.hasWindows
+
+        Rectangle {
+            anchors.centerIn: parent
+            width:  root.isFocused ? 44 : (mouse.containsMouse ? 40 : 36)
+            height: width
+            radius: 14
+            color:  root.isFocused
+                    ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.28)
+                    : (mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+            border.color: root.isFocused ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38) : "transparent"
+            border.width: 1
+            Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on color  { ColorAnimation  { duration: 160 } }
+        }
+
+        Image {
+            id: iconImg
+            anchors.centerIn: parent
+            width:  root.isFocused ? 28 : 24
+            height: width
+
+            source: (root.hasWindows && root.iconPath.length > 0) ? ("file://" + root.iconPath) : ""
+
+            smooth: true; mipmap: true
+            cache: false
+            sourceSize: Qt.size(64, 64)
+            fillMode: Image.PreserveAspectFit
+            opacity: root.isFocused ? 1.0 : 0.72
+            scale:   mouse.containsMouse ? 1.12 : 1.0
+            Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on scale   { NumberAnimation { duration: 160; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+        }
+    }
+
+    // ── Тултип ───────────────────────────────────────────────────────────
+    Rectangle {
+        anchors { bottom: parent.top; bottomMargin: 6; horizontalCenter: parent.horizontalCenter }
+        width:  ttLabel.implicitWidth + 18; height: 22; radius: 7
+        color:  Qt.rgba(0.04, 0.06, 0.14, 0.96)
+        border.color: Qt.rgba(1, 1, 1, 0.09); border.width: 1
+        opacity: mouse.containsMouse ? 1.0 : 0.0; z: 20
+        Behavior on opacity { NumberAnimation { duration: 160 } }
+        Text {
+            id: ttLabel; anchors.centerIn: parent
+            text:  root.hasWindows ? root.windowClass : ("Workspace " + root.wsId)
+            color: Qt.rgba(1, 1, 1, 0.82)
+            font { pixelSize: 11; family: "Google Sans"; weight: Font.Medium }
+        }
+    }
+
+    // ── Мышь ─────────────────────────────────────────────────────────────
+    MouseArea {
+        id: mouse; anchors.fill: parent
+        hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+        onClicked: Hyprland.dispatch("workspace " + root.wsId)
+    }
+}
