@@ -53,10 +53,6 @@ FloatingWindow {
     readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
-    readonly property string konachanTags: ConfigService.ready ? ConfigService.values.konachanTags : ""
-    readonly property bool wallpaperUpscaleEnabled: ConfigService.ready ? ConfigService.values.wallpaperUpscaleEnabled : false
-    readonly property int  wallpaperUpscaleFactor: ConfigService.ready ? ConfigService.values.wallpaperUpscaleFactor : 2
-    property bool wallpaperUpscalerAvailable: false
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -70,26 +66,6 @@ FloatingWindow {
     function updateDockIconFillEnabled(enabled) {
         if (ConfigService.ready) ConfigService.values.dockIconFillEnabled = enabled;
     }
-    function updateWallpaperUpscaleEnabled(enabled) {
-        if (ConfigService.ready) ConfigService.values.wallpaperUpscaleEnabled = enabled;
-    }
-    function updateWallpaperUpscaleFactor(factor) {
-        if (ConfigService.ready) ConfigService.values.wallpaperUpscaleFactor = factor;
-    }
-    function updateKonachanTags(tags) {
-        if (ConfigService.ready) ConfigService.values.konachanTags = tags;
-    }
-
-    Process {
-        id: wallpaperUpscalerCheckProc
-        command: ["bash", "-c", "if command -v upscayl-ncnn >/dev/null 2>&1 || command -v realesrgan-ncnn-vulkan >/dev/null 2>&1; then echo yes; else echo no; fi"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                settingsRoot.wallpaperUpscalerAvailable = data.trim() === "yes";
-            }
-        }
-    }
 
     function setThemeMode(mode) {
         if (ConfigService.ready) {
@@ -101,7 +77,6 @@ FloatingWindow {
     onSettingsVisibleChanged: {
         if (settingsVisible) {
             currentPage = 3;
-            wallpaperUpscalerCheckProc.running = true;
         }
     }
 
@@ -614,83 +589,6 @@ FloatingWindow {
                                                         Quickshell.execDetached(["bash", ConfigService.configDir + "/random_konachan.sh"])
                                                     }
                                                 }
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                    implicitHeight: 84
-
-                                                    RowLayout {
-                                                        anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 10; bottomMargin: 10 }
-                                                        spacing: 12
-
-                                                        Rectangle {
-                                                            Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18
-                                                            color: Qt.rgba(1,1,1,0.06)
-                                                            SvgIcon {
-                                                                anchors.centerIn: parent
-                                                                iconSource: "assets/icons/search.svg"
-                                                                iconSize: 20
-                                                                iconColor: settingsRoot.textPrimary
-                                                            }
-                                                        }
-
-                                                        ColumnLayout {
-                                                            Layout.fillWidth: true
-                                                            spacing: 2
-
-                                                            Text {
-                                                                text: "Konachan tags"
-                                                                font.pixelSize: 13
-                                                                font.family: "Google Sans"
-                                                                font.weight: Font.Medium
-                                                                color: settingsRoot.textPrimary
-                                                            }
-                                                            Text {
-                                                                text: "Space separated tags, e.g. blue_eyes school_uniform -loli"
-                                                                font.pixelSize: 11
-                                                                font.family: "Google Sans"
-                                                                color: settingsRoot.textSecondary
-                                                            }
-                                                        }
-
-                                                        Rectangle {
-                                                            Layout.preferredWidth: 260
-                                                            Layout.preferredHeight: 36
-                                                            radius: 10
-                                                            color: Qt.rgba(1,1,1,0.05)
-                                                            border.color: Qt.rgba(1,1,1,0.08)
-                                                            border.width: 1
-
-                                                            TextInput {
-                                                                id: konachanTagsInput
-                                                                anchors.fill: parent
-                                                                anchors.leftMargin: 12
-                                                                anchors.rightMargin: 12
-                                                                verticalAlignment: TextInput.AlignVCenter
-                                                                text: settingsRoot.konachanTags
-                                                                font.pixelSize: 12
-                                                                font.family: "Google Sans"
-                                                                color: settingsRoot.textPrimary
-                                                                selectByMouse: true
-                                                                selectionColor: settingsRoot.activeItem
-                                                                selectedTextColor: settingsRoot.bgColor
-                                                                onEditingFinished: settingsRoot.updateKonachanTags(text)
-                                                                Keys.onReturnPressed: {
-                                                                    settingsRoot.updateKonachanTags(text)
-                                                                    konachanTagsInput.focus = false
-                                                                }
-
-                                                                Text {
-                                                                    visible: konachanTagsInput.text.length === 0 && !konachanTagsInput.activeFocus
-                                                                    anchors.verticalCenter: parent.verticalCenter
-                                                                    text: "Leave empty for default"
-                                                                    font.pixelSize: 12
-                                                                    font.family: "Google Sans"
-                                                                    color: Qt.rgba(settingsRoot.textSecondary.r, settingsRoot.textSecondary.g, settingsRoot.textSecondary.b, 0.8)
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
                                                 SettingsRow {
                                                     iconSource: "assets/icons/image-fill.svg"
                                                     title: "Random osu! wallpaper"
@@ -699,67 +597,6 @@ FloatingWindow {
                                                     showDivider: false
                                                     onClicked: {
                                                         Quickshell.execDetached(["bash", ConfigService.configDir + "/random_osu.sh"])
-                                                    }
-                                                }
-
-                                                SettingsRow {
-                                                    iconSource: "assets/icons/zoom-in.svg"
-                                                    title: "Upscale wallpapers"
-                                                    subtitle: settingsRoot.wallpaperUpscalerAvailable
-                                                        ? "Enhance new wallpapers before applying"
-                                                        : "Uses the original image when no backend is installed"
-                                                    hasSwitch: true
-                                                    switchVal: settingsRoot.wallpaperUpscaleEnabled
-                                                    showDivider: false
-                                                    onSwitchToggled: {
-                                                        settingsRoot.updateWallpaperUpscaleEnabled(!settingsRoot.wallpaperUpscaleEnabled)
-                                                    }
-                                                }
-
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                    visible: settingsRoot.wallpaperUpscaleEnabled
-                                                    implicitHeight: 58
-
-                                                    RowLayout {
-                                                        anchors { fill: parent; leftMargin: 82; rightMargin: 16; topMargin: 8; bottomMargin: 8 }
-                                                        spacing: 8
-
-                                                        Text {
-                                                            text: "Scale"
-                                                            font.pixelSize: 13; font.family: "Google Sans"
-                                                            color: settingsRoot.textPrimary
-                                                        }
-
-                                                        Item { Layout.fillWidth: true }
-
-                                                        Repeater {
-                                                            model: [
-                                                                { label: "2x", value: 2 },
-                                                                { label: "4x", value: 4 }
-                                                            ]
-                                                            delegate: Rectangle {
-                                                                property bool isActive: settingsRoot.wallpaperUpscaleFactor === modelData.value
-                                                                width: scaleText.implicitWidth + 28
-                                                                height: 32
-                                                                radius: 16
-                                                                color: isActive ? settingsRoot.textPrimary : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.06)
-
-                                                                Text {
-                                                                    id: scaleText
-                                                                    anchors.centerIn: parent
-                                                                    text: modelData.label
-                                                                    font.pixelSize: 12; font.family: "Google Sans"; font.weight: 500
-                                                                    color: isActive ? settingsRoot.bgColor : settingsRoot.textPrimary
-                                                                }
-
-                                                                MouseArea {
-                                                                    anchors.fill: parent
-                                                                    cursorShape: Qt.PointingHandCursor
-                                                                    onClicked: settingsRoot.updateWallpaperUpscaleFactor(modelData.value)
-                                                                }
-                                                            }
-                                                        }
                                                     }
                                                 }
                                             }
