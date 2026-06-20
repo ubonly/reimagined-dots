@@ -848,26 +848,26 @@ PanelWindow {
             Item { implicitHeight: 2 }
         }
 
-        //bluetooth sub menu panel (dont work)
+        // Bluetooth sub-menu panel (fully working native manager)
         ColumnLayout {
             id: btCol
             visible: root.btPanelOpen
             anchors {
-                top:parent.top;    topMargin:16
-                left:parent.left;  leftMargin:16
-                right:parent.right;rightMargin:16
+                top: parent.top;    topMargin: 16
+                left: parent.left;  leftMargin: 16
+                right: parent.right; rightMargin: 16
             }
             spacing: 10
 
-            // header: back  |  "Bluetooth"  |  settings gear ──
+            // Header: back | "Bluetooth" | settings gear
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 0
 
-                // back button
+                // Back button
                 Rectangle {
-                    implicitWidth:36; implicitHeight:36; radius:18
-                    color: backArea.containsMouse ? Qt.rgba(1,1,1,0.08) : "transparent"
+                    implicitWidth: 36; implicitHeight: 36; radius: 18
+                    color: backArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
 
                     Image {
                         id: backImg
@@ -900,10 +900,10 @@ PanelWindow {
 
                 Item { Layout.fillWidth: true }
 
-                // settings gear
+                // Settings gear
                 Rectangle {
-                    implicitWidth:36; implicitHeight:36; radius:18
-                    color: gearArea.containsMouse ? Qt.rgba(1,1,1,0.08) : "transparent"
+                    implicitWidth: 36; implicitHeight: 36; radius: 18
+                    color: gearArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
 
                     Image {
                         id: btGearImg
@@ -921,27 +921,35 @@ PanelWindow {
                     MouseArea {
                         id: gearArea; anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor; hoverEnabled: true
+                        onClicked: {
+                            cmdProc.command = ["bash", "-c", "hyprctl dispatch exec blueman-manager &"]
+                            cmdProc.running = true
+                            root.popupVisible = false
+                        }
                     }
                 }
             }
 
-            // main toggle card
+            // Main toggle card (Bluetooth On/Off)
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: 56
                 radius: 18
-                color: root.btOn 
-                       ? (toggleArea.containsMouse ? Qt.darker(root.activeColor, 1.1) : root.activeColor) 
-                       : (toggleArea.containsMouse ? Qt.lighter(root.inactiveColor, 1.3) : root.inactiveColor)
+                color: root.btOn ? root.tileActiveBg : root.tileInactiveBg
+                border.width: 1
+                border.color: root.btOn ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.28) : root.tileBorder
 
                 RowLayout {
                     anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
                     spacing: 12
 
-                    // BT icon
+                    // Bluetooth Icon Circle
                     Rectangle {
                         Layout.preferredWidth: 36; Layout.preferredHeight: 36; radius: 18
-                        color: root.btOn ? Qt.rgba(0,0,0,0.10) : Qt.rgba(1,1,1,0.06)
+                        color: root.btOn 
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22) 
+                            : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08)
+                        
                         Image {
                             id: btToggleImg
                             anchors.centerIn: parent
@@ -953,7 +961,7 @@ PanelWindow {
                         ColorOverlay {
                             anchors.fill: btToggleImg
                             source: btToggleImg
-                            color: root.btOn ? root.textDark : root.textLight
+                            color: root.btOn ? Theme.colorOnPrimaryContainer : root.textLight
                         }
                     }
 
@@ -961,23 +969,25 @@ PanelWindow {
                         text: root.btOn ? "On" : "Off"
                         font.pixelSize: 14; font.family: "Google Sans"
                         font.weight: Font.Medium
-                        color: root.btOn ? root.textDark : root.textLight
+                        color: root.btOn ? Theme.colorOnPrimaryContainer : root.textLight
                         Layout.fillWidth: true
                     }
 
-                    // toggle switch
+                    // Toggle Switch
                     Rectangle {
                         id: btSwitch
-                        implicitWidth: 44; implicitHeight: 24; radius: 12
-                        color: root.btOn
-                            ? Qt.rgba(0.06, 0.06, 0.10, 0.35)
-                            : Qt.rgba(1,1,1,0.12)
+                        implicitWidth: 40; implicitHeight: 20; radius: 10
+                        color: root.btOn ? Theme.switchOnColor : Theme.switchOffColor
 
                         Rectangle {
-                            width: 18; height: 18; radius: 9
+                            width: 14; height: 14; radius: 7
                             anchors.verticalCenter: parent.verticalCenter
                             x: root.btOn ? parent.width - width - 3 : 3
-                            color: root.btOn ? root.textDark : root.subtextLight
+                            color: Theme.switchKnob
+
+                            Behavior on x {
+                                NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
+                            }
                         }
                     }
                 }
@@ -993,30 +1003,32 @@ PanelWindow {
                 }
             }
 
-            //device list card
+            // Device list card
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: btDeviceCol.implicitHeight + 16
+                implicitHeight: btDeviceLayout.implicitHeight + 16
                 radius: 18
-                color: root.inactiveColor
+                color: Theme.surface
+                border.color: Theme.outlineVariant
+                border.width: 1
 
                 ColumnLayout {
-                    id: btDeviceCol
+                    id: btDeviceLayout
                     anchors {
                         top: parent.top; topMargin: 8
-                        left: parent.left; leftMargin: 4
-                        right: parent.right; rightMargin: 4
+                        left: parent.left; leftMargin: 8
+                        right: parent.right; rightMargin: 8
                     }
                     spacing: 0
 
-                    // pair new device
+                    // Scan for devices / Pair new device header
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: 44; radius: 12
                         color: pairArea.containsMouse ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.06) : "transparent"
 
                         RowLayout {
-                            anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
+                            anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                             spacing: 10
 
                             Rectangle {
@@ -1033,16 +1045,44 @@ PanelWindow {
                                 ColorOverlay {
                                     anchors.fill: addImg
                                     source: addImg
-                                    color: root.activeColor
+                                    color: Theme.primary
                                 }
                             }
 
                             Text {
-                                text: root.isScanningBT ? "Scanning..." : "Pair new device"
+                                text: root.isScanningBT ? "Scanning for devices..." : "Pair new device"
                                 font.pixelSize: 13; font.family: "Google Sans"
                                 font.weight: Font.Medium
-                                color: root.activeColor
+                                color: root.textLight
                                 Layout.fillWidth: true
+                            }
+
+                            // Spinning scan indicator
+                            Item {
+                                width: 16; height: 16
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: root.isScanningBT
+
+                                Image {
+                                    id: scanRotImg
+                                    anchors.fill: parent
+                                    source: "assets/icons/restart-alt.svg"
+                                    sourceSize: Qt.size(16, 16)
+                                    visible: false
+                                }
+                                ColorOverlay {
+                                    anchors.fill: scanRotImg
+                                    source: scanRotImg
+                                    color: Theme.primary
+                                }
+
+                                RotationAnimation on rotation {
+                                    from: 0
+                                    to: 360
+                                    duration: 1500
+                                    loops: Animation.Infinite
+                                    running: root.isScanningBT
+                                }
                             }
                         }
 
@@ -1050,52 +1090,67 @@ PanelWindow {
                             id: pairArea; anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                             onClicked: {
-                                if (BluetoothService.isScanning) {
-                                    BluetoothService.stopDiscovery();
-                                } else {
-                                    BluetoothService.startDiscovery();
+                                if (root.btOn) {
+                                    if (BluetoothService.isScanning) {
+                                        BluetoothService.stopDiscovery();
+                                    } else {
+                                        BluetoothService.startDiscovery();
+                                    }
                                 }
                             }
                         }
                     }
 
-                    //separator
+                    // Separator
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.leftMargin: 14; Layout.rightMargin: 14
+                        Layout.topMargin: 4; Layout.bottomMargin: 4
+                        Layout.leftMargin: 12; Layout.rightMargin: 12
                         implicitHeight: 1
-                        color: Qt.rgba(1,1,1,0.06)
+                        color: Qt.rgba(1, 1, 1, 0.06)
                     }
 
-                    // Empty State Placeholder
+                    // Empty state placeholder
                     Item {
                         visible: root.btDevices.length === 0 && !root.isScanningBT
                         Layout.fillWidth: true
                         implicitHeight: 52
                         Text {
                             anchors.centerIn: parent
-                            text: "No device connected"
+                            text: root.btOn ? "No devices found" : "Bluetooth is turned off"
                             font.pixelSize: 12; font.family: "Google Sans"
                             font.italic: true
                             color: root.subtextLight
                         }
                     }
 
-                    Repeater {
+                    // Scrollable Device List
+                    ListView {
+                        id: btListView
+                        Layout.fillWidth: true
+                        implicitHeight: Math.min(contentHeight, 220)
+                        clip: true
                         model: root.btDevices
+                        boundsBehavior: Flickable.StopAtBounds
+
                         delegate: Rectangle {
-                            Layout.fillWidth: true
+                            id: devItem
+                            width: btListView.width
                             implicitHeight: 48
-                            color: devArea.containsMouse ? Qt.rgba(1,1,1,0.06) : "transparent"
+                            color: devArea.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
                             radius: 12
 
                             RowLayout {
-                                anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
+                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                                 spacing: 12
 
+                                // Device Status Icon
                                 Rectangle {
                                     Layout.preferredWidth: 32; Layout.preferredHeight: 32; radius: 16
-                                    color: modelData.connected ? root.activeColor : Qt.rgba(1,1,1,0.08)
+                                    color: modelData.connected 
+                                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2) 
+                                        : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08)
+                                    
                                     Image {
                                         id: devImg
                                         anchors.centerIn: parent
@@ -1107,13 +1162,14 @@ PanelWindow {
                                     ColorOverlay {
                                         anchors.fill: devImg
                                         source: devImg
-                                        color: modelData.connected ? root.textDark : root.textLight
+                                        color: modelData.connected ? Theme.primary : root.textLight
                                     }
                                 }
 
+                                // Name & State details
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 2
+                                    spacing: 1
                                     Text {
                                         text: modelData.name || "Unknown Device"
                                         font.pixelSize: 13; font.family: "Google Sans"
@@ -1123,40 +1179,86 @@ PanelWindow {
                                         Layout.fillWidth: true
                                     }
                                     Text {
-                                        text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "Available")
+                                        text: modelData.connected 
+                                            ? "Connected" 
+                                            : (modelData.paired ? "Paired" : "Available (click to pair)")
                                         font.pixelSize: 11; font.family: "Google Sans"
-                                        color: modelData.connected ? root.activeColor : root.subtextLight
-                                        visible: text !== ""
+                                        color: modelData.connected ? Theme.primary : root.subtextLight
+                                    }
+                                }
+
+                                // Forget Device Button (Unpair)
+                                Rectangle {
+                                    id: forgetBtn
+                                    Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 14
+                                    color: forgetArea.containsMouse ? Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.15) : "transparent"
+                                    visible: modelData.paired
+                                    opacity: devArea.containsMouse || forgetArea.containsMouse ? 0.8 : 0.25
+
+                                    Behavior on opacity {
+                                        NumberAnimation { duration: 150 }
+                                    }
+
+                                    Image {
+                                        id: trashImg
+                                        anchors.centerIn: parent
+                                        width: 14; height: 14
+                                        source: "assets/icons/close.svg"
+                                        sourceSize: Qt.size(14, 14)
+                                        visible: false
+                                    }
+                                    ColorOverlay {
+                                        anchors.fill: trashImg
+                                        source: trashImg
+                                        color: forgetArea.containsMouse ? Theme.error : root.textLight
+                                    }
+
+                                    MouseArea {
+                                        id: forgetArea; anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor; hoverEnabled: true
+                                        onClicked: {
+                                            BluetoothService.forgetDevice(modelData)
+                                        }
                                     }
                                 }
                             }
 
+                            // Interactive main row MouseArea
                             MouseArea {
-                                id: devArea; anchors.fill: parent
+                                id: devArea
+                                anchors.fill: parent
+                                anchors.rightMargin: modelData.paired ? 32 : 0
                                 cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                                 onClicked: {
-                                    BluetoothService.toggleConnect(modelData)
+                                    if (modelData.connected) {
+                                        modelData.disconnect();
+                                    } else if (modelData.paired) {
+                                        modelData.connect();
+                                    } else {
+                                        BluetoothService.pairDevice(modelData);
+                                    }
                                 }
                             }
                         }
                     }
 
-                    //separator
+                    // Separator
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.leftMargin: 14; Layout.rightMargin: 14
+                        Layout.topMargin: 4; Layout.bottomMargin: 4
+                        Layout.leftMargin: 12; Layout.rightMargin: 12
                         implicitHeight: 1
-                        color: Qt.rgba(1,1,1,0.06)
+                        color: Qt.rgba(1, 1, 1, 0.06)
                     }
 
-                    // Advanced settings
+                    // Advanced Settings
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 44; radius: 12
-                        color: advArea.containsMouse ? Qt.rgba(1,1,1,0.06) : "transparent"
+                        implicitHeight: 40; radius: 12
+                        color: advArea.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
 
                         RowLayout {
-                            anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
+                            anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                             spacing: 10
                             Text {
                                 text: "Advanced settings"
