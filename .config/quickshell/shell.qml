@@ -9,65 +9,56 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "Theme"
+import "services"
 
 ShellRoot {
     id: root
     // ── Global notification server (must be a single instance) ─────────────
-    Process {
-        id: dndProc
-        running: true
-        command: ["tail", "-F", "/home/ubonly/.config/quickshell/dnd.txt"]
-        stdout: SplitParser {
-            onRead: function(l) { root.dndMode = (l.trim() === "true") }
-        }
-    }
-    property bool dndMode: false
-
-    property string dockStyle: "rounded"
-    property bool dockTransparencyEnabled: false
-    property real dockOpacity: 1.0
+    // ── Global Configuration Service ───────────────────────────────────────
+    property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
+    property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
+    property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
+    property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
     readonly property real effectiveDockOpacity: dockTransparencyEnabled ? dockOpacity : 1.0
-    Timer {
-        interval: 500
-        repeat: true
-        running: true
-        onTriggered: {
-            styleProc.running = true
-            dockTransparencyProc.running = true
-            dockOpacityProc.running = true
-        }
-    }
-    Process {
-        id: styleProc
-        running: true
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_style.txt"]
-        stdout: SplitParser {
-            onRead: function(l) { 
-                var s = l.trim(); 
-                if (s === "rounded" || s === "square" || s === "floating") root.dockStyle = s;
+    property bool dndMode: ConfigService.ready ? ConfigService.values.dnd : false
+
+    property string kbLayout: "US"
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "activelayout") {
+                var data = event.data;
+                var commaIdx = data.indexOf(",");
+                if (commaIdx >= 0) {
+                    var layoutName = data.substring(commaIdx + 1);
+                    root.updateKbLayout(layoutName);
+                }
             }
         }
     }
-    Process {
-        id: dockTransparencyProc
-        running: true
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_transparency_enabled.txt"]
-        stdout: SplitParser {
-            onRead: function(l) {
-                var s = l.trim().toLowerCase();
-                root.dockTransparencyEnabled = s === "true" || s === "1" || s === "yes";
-            }
-        }
+
+    function updateKbLayout(raw) {
+        if (!raw) return;
+        var lower = raw.toLowerCase();
+        if (lower.indexOf("russian") >= 0)       root.kbLayout = "RU";
+        else if (lower.indexOf("english") >= 0)  root.kbLayout = "US";
+        else if (lower.indexOf("german") >= 0)   root.kbLayout = "DE";
+        else if (lower.indexOf("french") >= 0)   root.kbLayout = "FR";
+        else if (lower.indexOf("spanish") >= 0)  root.kbLayout = "ES";
+        else if (lower.indexOf("ukraine") >= 0)  root.kbLayout = "UA";
+        else if (raw.length > 0 && raw.length <= 3)          root.kbLayout = raw.toUpperCase();
+        else if (raw.length > 3)                             root.kbLayout = raw.substring(0, 2).toUpperCase();
+        else                                                  root.kbLayout = "US";
     }
+
     Process {
-        id: dockOpacityProc
+        id: initialKbProc
+        command: ["bash", "-c", "hyprctl devices -j 2>/dev/null | jq -r '.keyboards[0].active_keymap' 2>/dev/null"]
         running: true
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_opacity.txt"]
         stdout: SplitParser {
-            onRead: function(l) {
-                var value = parseFloat(l.trim());
-                if (!isNaN(value))
-                    root.dockOpacity = Math.max(0.2, Math.min(1.0, value));
+            onRead: function(line) {
+                root.updateKbLayout(line.trim());
             }
         }
     }
@@ -338,10 +329,10 @@ ShellRoot {
             }
 
             // ── Данные для мини-иконок ───────────────────────────────────
-            property int  wifiBars: 0
-            property bool btOn:     false
-            property int  volume:   50
-            property string kbLayout: "US"
+            readonly property int wifiBars: NetworkService.statusBars
+            readonly property bool btOn: BluetoothService.btOn
+            readonly property int volume: AudioService.volume
+            readonly property string kbLayout: root.kbLayout
             property bool isRecording: false
             property int recordingSeconds: 0
 
@@ -378,79 +369,9 @@ ShellRoot {
             }
             Timer { interval: 1000; repeat: true; running: true; onTriggered: recordCheckProc.running = true }
 
-            Process {
-                id: wifiBarProc
-                command: ["bash", "-c", "eth=$(nmcli -t -f TYPE,STATE con show --active 2>/dev/null | grep -q '^802-3-ethernet:activated' && echo 1 || echo 0); if [ \"$eth\" = \"1\" ]; then echo '100'; else nmcli -t -f ACTIVE,SIGNAL dev wifi 2>/dev/null | awk -F: '/^yes/{print $2; exit}' || echo '-1'; fi"]
-                running: true
-                stdout: SplitParser {
-                    onRead: function(line) {
-                        var v = parseInt(line.trim())
-                        if (v === 100)            screenItem.wifiBars = 100
-                        else if (isNaN(v) || v < 0)    screenItem.wifiBars = 0
-                        else if (v < 25)          screenItem.wifiBars = 1
-                        else if (v < 50)          screenItem.wifiBars = 2
-                        else if (v < 75)          screenItem.wifiBars = 3
-                        else                      screenItem.wifiBars = 4
-                    }
-                }
-            }
-            Timer { interval: 5000; repeat: true; running: true; onTriggered: wifiBarProc.running = true }
-
-            Process {
-                id: btBarProc
-                command: ["bash", "-c", "bluetoothctl show 2>/dev/null | grep -q 'Powered: yes' && echo 'on' || echo 'off'"]
-                running: true
-                stdout: SplitParser { onRead: function(line) { screenItem.btOn = line.trim() === "on" } }
-            }
-            Timer { interval: 8000; repeat: true; running: true; onTriggered: btBarProc.running = true }
-
-            Process {
-                id: volBarProc
-                command: ["bash", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf \"%d\", $2*100}'"]
-                running: true
-                stdout: SplitParser {
-                    onRead: function(line) {
-                        var v = parseInt(line.trim())
-                        if (!isNaN(v)) screenItem.volume = v
-                    }
-                }
-            }
-            Timer { interval: 3000; repeat: true; running: true; onTriggered: volBarProc.running = true }
-
-            // ── Keyboard layout detection ──────────────────────────────
-            Process {
-                id: kbProc
-                command: ["bash", "-c", "hyprctl devices -j 2>/dev/null | jq -r '.keyboards[0].active_keymap' 2>/dev/null"]
-                running: true
-                stdout: SplitParser {
-                    onRead: function(line) {
-                        var raw = line.trim()
-                        if (raw.toLowerCase().indexOf("russian") >= 0)       screenItem.kbLayout = "RU"
-                        else if (raw.toLowerCase().indexOf("english") >= 0)  screenItem.kbLayout = "US"
-                        else if (raw.toLowerCase().indexOf("german") >= 0)   screenItem.kbLayout = "DE"
-                        else if (raw.toLowerCase().indexOf("french") >= 0)   screenItem.kbLayout = "FR"
-                        else if (raw.toLowerCase().indexOf("spanish") >= 0)  screenItem.kbLayout = "ES"
-                        else if (raw.toLowerCase().indexOf("ukraine") >= 0)  screenItem.kbLayout = "UA"
-                        else if (raw.length > 0 && raw.length <= 3)          screenItem.kbLayout = raw.toUpperCase()
-                        else if (raw.length > 3)                             screenItem.kbLayout = raw.substring(0, 2).toUpperCase()
-                        else                                                  screenItem.kbLayout = "US"
-                    }
-                }
-            }
-            Timer { interval: 2000; repeat: true; running: true; onTriggered: kbProc.running = true }
-
             SystemClock {
                 id: clock
                 precision: SystemClock.Seconds
-            }
-
-            Process {
-                id: kbSwitchProc
-                command: ["hyprctl", "switchxkblayout", "all", "next"]
-                running: false
-                onRunningChanged: {
-                    if (!running) kbProc.running = true
-                }
             }
 
             // ══════════════════════════════════════════════════════════════════════
@@ -590,6 +511,8 @@ ShellRoot {
                                 wsId: index + 1
                                 clientsByWs: screenItem.clientsByWs
                                 clientIconsByWs: screenItem.clientIconsByWs
+                                dockIconFillEnabled: root.dockIconFillEnabled
+                                dockIconFillColor: Theme.secondary
                             }
                         }
 
@@ -753,7 +676,7 @@ ShellRoot {
                                     spacing: 10
 
                                     Item {
-                                        width: 18; height: 18
+                                        width: 22; height: 22
                                         anchors.verticalCenter: parent.verticalCenter
 
                                         Image {
@@ -767,7 +690,7 @@ ShellRoot {
                                                 if (screenItem.wifiBars === 3) return "assets/icons/network-wifi-3-bar.svg"
                                                 return "assets/icons/signal-wifi-4-bar.svg"
                                             }
-                                            sourceSize: Qt.size(18, 18)
+                                            sourceSize: Qt.size(22, 22)
                                             smooth: true
                                             visible: false
                                         }

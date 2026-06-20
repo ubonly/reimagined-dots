@@ -14,7 +14,7 @@ Item {
     property string appName:  "App"
     property string appCmd:   ""
     property bool dockIconFillEnabled: false
-    property color dockIconFillColor: Theme.primary
+    property color dockIconFillColor: Theme.secondary
 
     implicitWidth:  46
     implicitHeight: 46

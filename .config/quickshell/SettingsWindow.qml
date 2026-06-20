@@ -9,6 +9,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "Theme"
+import "services"
 
 FloatingWindow {
     id: settingsRoot
@@ -47,95 +48,38 @@ FloatingWindow {
     //  STATE
     // ══════════════════════════════════════════════════════════════════════
     property int    currentPage: 2
-    property string themeMode: "dark"
-    property string dockStyle: "rounded"
-    property bool dockTransparencyEnabled: false
-    property real dockOpacity: 0.85
-    property string konachanTags: ""
-    property bool wallpaperUpscaleEnabled: false
-    property int  wallpaperUpscaleFactor: 2
+    readonly property string themeMode: ConfigService.ready ? ConfigService.values.themeMode : "dark"
+    readonly property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
+    readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
+    readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
+    readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
+    readonly property string konachanTags: ConfigService.ready ? ConfigService.values.konachanTags : ""
+    readonly property bool wallpaperUpscaleEnabled: ConfigService.ready ? ConfigService.values.wallpaperUpscaleEnabled : false
+    readonly property int  wallpaperUpscaleFactor: ConfigService.ready ? ConfigService.values.wallpaperUpscaleFactor : 2
     property bool wallpaperUpscalerAvailable: false
-    Process {
-        id: dockStyleProc
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_style.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                let m = data.trim();
-                if (m === "rounded" || m === "square" || m === "floating") settingsRoot.dockStyle = m;
-            }
-        }
-    }
+
     function updateDockStyle(style) {
-        settingsRoot.dockStyle = style;
-        Quickshell.execDetached(["bash", "-c", "echo '" + style + "' > /home/ubonly/.config/quickshell/dock_style.txt"]);
-    }
-    Process {
-        id: dockTransparencyProc
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_transparency_enabled.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                let m = data.trim().toLowerCase();
-                settingsRoot.dockTransparencyEnabled = m === "true" || m === "1" || m === "yes";
-            }
-        }
-    }
-    Process {
-        id: dockOpacityProc
-        command: ["cat", "/home/ubonly/.config/quickshell/dock_opacity.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                let value = parseFloat(data.trim());
-                if (!isNaN(value))
-                    settingsRoot.dockOpacity = Math.max(0.2, Math.min(1.0, value));
-            }
-        }
+        if (ConfigService.ready) ConfigService.values.dockStyle = style;
     }
     function updateDockTransparency(enabled) {
-        settingsRoot.dockTransparencyEnabled = enabled;
-        Quickshell.execDetached(["bash", "-c", "echo '" + (enabled ? "true" : "false") + "' > /home/ubonly/.config/quickshell/dock_transparency_enabled.txt"]);
+        if (ConfigService.ready) ConfigService.values.dockTransparencyEnabled = enabled;
     }
     function updateDockOpacity(value) {
-        let clamped = Math.max(0.2, Math.min(1.0, value));
-        settingsRoot.dockOpacity = clamped;
-        Quickshell.execDetached(["bash", "-c", "printf '%.2f\\n' " + clamped + " > /home/ubonly/.config/quickshell/dock_opacity.txt"]);
+        if (ConfigService.ready) ConfigService.values.dockOpacity = Math.max(0.2, Math.min(1.0, value));
+    }
+    function updateDockIconFillEnabled(enabled) {
+        if (ConfigService.ready) ConfigService.values.dockIconFillEnabled = enabled;
+    }
+    function updateWallpaperUpscaleEnabled(enabled) {
+        if (ConfigService.ready) ConfigService.values.wallpaperUpscaleEnabled = enabled;
+    }
+    function updateWallpaperUpscaleFactor(factor) {
+        if (ConfigService.ready) ConfigService.values.wallpaperUpscaleFactor = factor;
+    }
+    function updateKonachanTags(tags) {
+        if (ConfigService.ready) ConfigService.values.konachanTags = tags;
     }
 
-    Process {
-        id: konachanTagsProc
-        command: ["cat", "/home/ubonly/.config/quickshell/konachan_tags.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                settingsRoot.konachanTags = data.trim();
-            }
-        }
-    }
-
-    Process {
-        id: wallpaperUpscaleEnabledProc
-        command: ["cat", "/home/ubonly/.config/quickshell/wallpaper_upscale_enabled.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                let m = data.trim().toLowerCase();
-                settingsRoot.wallpaperUpscaleEnabled = m === "true" || m === "1" || m === "yes";
-            }
-        }
-    }
-    Process {
-        id: wallpaperUpscaleFactorProc
-        command: ["cat", "/home/ubonly/.config/quickshell/wallpaper_upscale_factor.txt"]
-        running: false
-        stdout: SplitParser {
-            onRead: data => {
-                let m = parseInt(data.trim());
-                if (m === 2 || m === 4) settingsRoot.wallpaperUpscaleFactor = m;
-            }
-        }
-    }
     Process {
         id: wallpaperUpscalerCheckProc
         command: ["bash", "-c", "if command -v upscayl-ncnn >/dev/null 2>&1 || command -v realesrgan-ncnn-vulkan >/dev/null 2>&1; then echo yes; else echo no; fi"]
@@ -146,50 +90,17 @@ FloatingWindow {
             }
         }
     }
-    function updateWallpaperUpscaleEnabled(enabled) {
-        settingsRoot.wallpaperUpscaleEnabled = enabled;
-        Quickshell.execDetached(["bash", "-c", "echo '" + (enabled ? "true" : "false") + "' > /home/ubonly/.config/quickshell/wallpaper_upscale_enabled.txt"]);
-    }
-    function updateWallpaperUpscaleFactor(factor) {
-        settingsRoot.wallpaperUpscaleFactor = factor;
-        Quickshell.execDetached(["bash", "-c", "echo '" + factor + "' > /home/ubonly/.config/quickshell/wallpaper_upscale_factor.txt"]);
-    }
-    function shellQuote(value) {
-        return "'" + String(value).replace(/'/g, "'\"'\"'") + "'";
-    }
-    function updateKonachanTags(tags) {
-        settingsRoot.konachanTags = tags;
-        Quickshell.execDetached(["bash", "-c", "printf '%s\\n' " + shellQuote(tags) + " > /home/ubonly/.config/quickshell/konachan_tags.txt"]);
-    }
 
-    
-    Process {
-        id: themeModeProc
-        command: ["cat", "/home/ubonly/.config/quickshell/theme_mode.txt"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                let m = data.trim();
-                if (m === "dark" || m === "light") settingsRoot.themeMode = m;
-            }
-        }
-    }
-    
     function setThemeMode(mode) {
-        settingsRoot.themeMode = mode;
-        Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/set_theme_mode.sh", mode]);
+        if (ConfigService.ready) {
+            ConfigService.values.themeMode = mode;
+            Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/set_theme_mode.sh", mode]);
+        }
     }
 
     onSettingsVisibleChanged: {
         if (settingsVisible) {
             currentPage = 3;
-            themeModeProc.running = true;
-            dockStyleProc.running = true;
-            dockTransparencyProc.running = true;
-            dockOpacityProc.running = true;
-            konachanTagsProc.running = true;
-            wallpaperUpscaleEnabledProc.running = true;
-            wallpaperUpscaleFactorProc.running = true;
             wallpaperUpscalerCheckProc.running = true;
         }
     }
@@ -970,6 +881,18 @@ FloatingWindow {
                                                                 onClicked: settingsRoot.updateDockTransparency(!settingsRoot.dockTransparencyEnabled)
                                                             }
                                                         }
+                                                    }
+                                                }
+
+                                                SettingsRow {
+                                                    iconSource: "assets/icons/palette-outline.svg"
+                                                    title: "Fill dock icons"
+                                                    subtitle: "Tint dock app icons with the current theme color"
+                                                    hasSwitch: true
+                                                    switchVal: settingsRoot.dockIconFillEnabled
+                                                    showDivider: false
+                                                    onSwitchToggled: {
+                                                        settingsRoot.updateDockIconFillEnabled(!settingsRoot.dockIconFillEnabled)
                                                     }
                                                 }
 

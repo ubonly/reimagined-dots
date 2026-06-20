@@ -16,7 +16,7 @@ Item {
     property var clientsByWs: ({})
     property var clientIconsByWs: ({})
     property bool dockIconFillEnabled: false
-    property color dockIconFillColor: Theme.primary
+    property color dockIconFillColor: Theme.secondary
 
     readonly property bool   isFocused:   Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace !== undefined && Hyprland.focusedWorkspace.id === wsId
     readonly property string windowClass: (clientsByWs && clientsByWs[wsId]) ? clientsByWs[wsId] : ""

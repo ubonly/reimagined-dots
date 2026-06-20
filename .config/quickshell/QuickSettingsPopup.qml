@@ -9,6 +9,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "Theme"
+import "services"
 
 PanelWindow {
     id: root
@@ -81,40 +82,48 @@ PanelWindow {
     readonly property color sliderBg:      Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.10)
     readonly property color sliderFill:    Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.45)
     readonly property color tileInactiveBg: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.06)
-    readonly property color tileActiveBg:   Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.14 : 0.11)
+    readonly property color tileActiveBg:   Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.20 : 0.16)
     readonly property color tileBorder:     Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.10 : 0.07)
     readonly property color tileHover:      Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.09 : 0.07)
     readonly property color sliderTrackBg:  Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.14 : 0.16)
     readonly property color sliderKnobGlow: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.12 : 0.10)
 
     // state
-    property string wifiName:        "..."
-    property int    wifiSignal:      -1
-    property bool   wifiRadioOn:     false   // is the wifi radio enabled
-    property bool   wifiConnected:   false   // is there an active wifi connection
-    property bool   wifiHasInternet: true    // does the connection have internet
+    readonly property string wifiName:        NetworkService.wifiName
+    readonly property int    wifiSignal:      NetworkService.wifiSignal
+    readonly property bool   wifiRadioOn:     NetworkService.wifiRadioOn
+    readonly property bool   wifiConnected:   NetworkService.wifiConnected
+    readonly property bool   wifiHasInternet: NetworkService.wifiHasInternet
     // Convenience: legacy compat — "wifiOn" means radio is enabled
-    property bool   wifiOn:          wifiRadioOn
-    property bool   ethConnected:    false
-    property string ethName:         ""
-    property bool   btOn:            false
-    property var    btDevices:       []
-    property bool   isScanningBT:    false
-    property bool   dndOn:           false
-    property int    volume:          50
+    readonly property bool   wifiOn:          wifiRadioOn
+    readonly property bool   ethConnected:    NetworkService.ethConnected
+    readonly property string ethName:         NetworkService.ethName
+    readonly property bool   btOn:            BluetoothService.btOn
+    readonly property var    btDevices:       BluetoothService.devices
+    readonly property bool   isScanningBT:    BluetoothService.isScanning
+    readonly property bool   dndOn:           ConfigService.ready ? ConfigService.values.dnd : false
+    readonly property int    volume:          AudioService.volume
+
+    onBtPanelOpenChanged: {
+        if (btPanelOpen) {
+            BluetoothService.startDiscovery();
+        } else {
+            BluetoothService.stopDiscovery();
+        }
+    }
 
     // Wi-Fi password popup state
     property bool   wifiPassVisible: false
     property string wifiPassSsid:    ""
     property string wifiPassError:   ""
-    property int    brightness: 80
+    readonly property int    brightness:      BrightnessService.brightness
 
     // sub-menu state
     property bool wifiMenuOpen:    false
     property bool btPanelOpen:     false
     property bool powerMenuOpen:   false
-    property var  knownNetworks:   []
-    property var  unknownNetworks: []
+    readonly property var  knownNetworks:   NetworkService.knownNetworks
+    readonly property var  unknownNetworks: NetworkService.unknownNetworks
 
     function sigLabel(s) {
         if (s < 0) return "Off"; if (s < 30) return "Weak"
@@ -123,213 +132,33 @@ PanelWindow {
 
     // helper- pick the right wifi icon asset for current state
     function wifiIcon() {
-        if (!wifiRadioOn)    return "assets/icons/wifi-off.svg"
-        if (!wifiConnected)  return "assets/icons/signal-wifi-statusbar-not-connected.svg"
-        if (!wifiHasInternet) return "assets/icons/signal-wifi-statusbar-not-connected.svg"
-        if (wifiSignal >= 75) return "assets/icons/signal-wifi-4-bar.svg"
-        if (wifiSignal >= 50) return "assets/icons/network-wifi-3-bar.svg"
-        if (wifiSignal >= 25) return "assets/icons/network-wifi-2-bar.svg"
-        return "assets/icons/network-wifi-1-bar.svg"
+        return NetworkService.wifiIcon()
     }
 
     // helper - subtitle text for the wifi tile
     function wifiSubtitle() {
-        if (!wifiRadioOn)    return "Off"
-        if (!wifiConnected)  return "Not connected"
-        if (!wifiHasInternet) return "No internet"
-        return sigLabel(wifiSignal)
+        return NetworkService.wifiSubtitle()
     }
 
-    
-    //  process
-    // comprehensive wifi status: radio state, active connection, connectivity, ethernet
-    property string _wifiStatusBuf: ""
-    Process { id: wifiProc; running: false
-        command: ["bash", "-c",
-            "eth=$(nmcli -t -f TYPE,STATE,NAME con show --active 2>/dev/null | awk -F: '/^802-3-ethernet:activated/{print $3; exit}'); " +
-            "radio=$(nmcli -t -f WIFI general 2>/dev/null); " +
-            "conn=$(nmcli -t -f ACTIVE,SSID,SIGNAL dev wifi 2>/dev/null | awk -F: '/^yes/{print $2\"|\"$3;exit}'); " +
-            "inet=$(nmcli -t -f CONNECTIVITY general 2>/dev/null); " +
-            "echo \"ETH:${eth}|${radio}|${conn}|${inet}\""
-        ]
-        stdout: SplitParser { onRead: function(l) {
-            // Format: "ETH:ethName|enabled|SSID|SIGNAL|full"
-            var raw = l.trim()
-            var ethEnd = raw.indexOf("|")
-            var ethPart = raw.substring(0, ethEnd)
-            var rest = raw.substring(ethEnd + 1)
-
-            var ethName = ethPart.startsWith("ETH:") ? ethPart.substring(4) : ""
-            root.ethConnected = (ethName.length > 0)
-            root.ethName = ethName
-
-            // Split rest into: [radio, SSID|SIGNAL, connectivity]
-            var firstPipe = rest.indexOf("|")
-            var lastPipe  = rest.lastIndexOf("|")
-            if (firstPipe < 0) return
-
-            var radio = rest.substring(0, firstPipe)
-            var connPart = rest.substring(firstPipe + 1, lastPipe)
-            var inet  = rest.substring(lastPipe + 1)
-
-            // Radio state
-            root.wifiRadioOn = (radio === "enabled")
-
-            // Connection state
-            if (connPart && connPart.indexOf("|") >= 0) {
-                var cp = connPart.split("|")
-                root.wifiName = cp[0] || "Wi-Fi"
-                root.wifiSignal = parseInt(cp[1]) || 0
-                root.wifiConnected = true
+    Connections {
+        target: NetworkService
+        function onPasswordFinished(ok, message) {
+            if (ok) {
+                root.wifiPassVisible = false
+                root.btPanelOpen = false
+                wifiPassField.text = ""
             } else {
-                root.wifiName = "Wi-Fi"
-                root.wifiSignal = -1
-                root.wifiConnected = false
+                root.wifiPassError = message
             }
-
-            // Internet connectivity
-            root.wifiHasInternet = (inet === "full")
-        }}
-    }
-    Process { id: btProc; running: false
-        command:["bash","-c","bluetoothctl show 2>/dev/null|grep -q 'Powered: yes'&&echo on||echo off"]
-        stdout: SplitParser { onRead: function(l){root.btOn=l.trim()==="on"} }
-        onRunningChanged: { if (!running) { if (root.btPanelOpen && root.btOn) { btListProc.running = true } } }
-    }
-
-    property string _btBuf: ""
-    Process { id: btListProc; running: false
-        command: ["/home/ubonly/.config/quickshell/bt_list.sh"]
-        stdout: SplitParser { onRead: function(l) { root._btBuf += l + "\n" } }
-        onRunningChanged: {
-            if (!running) {
-                var lines = root._btBuf.trim().split("\n")
-                var devs = []
-                for (var i = 0; i < lines.length; i++) {
-                    var p = lines[i].split("|")
-                    if (p.length < 4) continue
-                    devs.push({ mac: p[0], name: p[1] || "Unknown Device", paired: p[2] === "1", connected: p[3] === "1" })
-                }
-                devs.sort(function(a, b) {
-                    if (a.connected !== b.connected) return a.connected ? -1 : 1;
-                    if (a.paired !== b.paired) return a.paired ? -1 : 1;
-                    return a.name.localeCompare(b.name);
-                })
-                root.btDevices = devs
-                root._btBuf = ""
-            } else { root._btBuf = "" }
         }
     }
 
-    Process { id: btScanProc; running: false
-        command: ["bash", "-c", "bluetoothctl --timeout 15 scan on"]
-        onRunningChanged: { root.isScanningBT = running }
-    }
-
-    Process { id: btPairProc; command: []; running: false
-        onRunningChanged: { if (!running) { btListProc.running = true } }
-    }
-    Process {
-        id: dndProc
-        running: true
-        command: ["tail", "-F", "/home/ubonly/.config/quickshell/dnd.txt"]
-        stdout: SplitParser {
-            onRead: function(l) { root.dndOn = (l.trim() === "true") }
-        }
-    }
-    Process { id: volProc; running: false
-        command:["bash","-c","wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null|awk '{printf\"%d\",$2*100}'"]
-        stdout: SplitParser { onRead: function(l){var v=parseInt(l);if(!isNaN(v))root.volume=v} }
-    }
-    Process { id: briProc; running: false
-        command:["bash","-c","brightnessctl -m 2>/dev/null|awk -F, '{gsub(/%/,\"\",$4);print $4}'|head -1"]
-        stdout: SplitParser { onRead: function(l){var v=parseInt(l);if(!isNaN(v))root.brightness=v} }
-    }
     Process { id: cmdProc;  command:[]; running:false
-        onRunningChanged:{if(!running){wifiProc.running=true;btProc.running=true}}
+        onRunningChanged:{if(!running){NetworkService.update()}}
     }
-    Process { id: volSet;   command:[]; running:false }
-    Process { id: briSet;   command:[]; running:false }
     Process { id: powerProc; command:[]; running:false }
 
-    // Wi-Fi network scan
-    property string _wifiBuf: ""
-
-    Process {
-        id: wifiScanProc; running: false
-        command: ["bash", "-c",
-            "known=$(nmcli -t -f NAME con show 2>/dev/null | sort -u); " +
-            "nmcli -t -f SSID,SIGNAL,SECURITY,IN-USE dev wifi list --rescan no 2>/dev/null | " +
-            "while IFS=: read ssid sig sec used; do " +
-            "[ -z \"$ssid\" ] && continue; " +
-            "is_known=$(echo \"$known\" | grep -qxF \"$ssid\" && echo 1 || echo 0); " +
-            "echo \"${ssid}|${sig}|${sec}|${used}|${is_known}\"; " +
-            "done | awk -F'|' '!seen[$1]++' | sort -t'|' -k5,5rn -k2,2rn"
-        ]
-        stdout: SplitParser {
-            onRead: function(line) { root._wifiBuf += line + "\n" }
-        }
-        onRunningChanged: {
-            if (!running) {
-                var lines = root._wifiBuf.trim().split("\n")
-                var kn = [], un = []
-                for (var i = 0; i < lines.length; i++) {
-                    var p = lines[i].split("|")
-                    if (p.length < 5) continue
-                    var e = { ssid: p[0], signal: parseInt(p[1])||0,
-                              security: p[2]||"", inUse: p[3]==="*", isKnown: p[4]==="1" }
-                    if (e.isKnown) kn.push(e); else un.push(e)
-                }
-                kn.sort(function(a, b) {
-                    var aConn = (root.wifiConnected && a.ssid === root.wifiName);
-                    var bConn = (root.wifiConnected && b.ssid === root.wifiName);
-                    if (aConn !== bConn) return aConn ? -1 : 1;
-                    return b.signal - a.signal;
-                })
-                root.knownNetworks = kn
-                root.unknownNetworks = un
-                root._wifiBuf = ""
-            } else { root._wifiBuf = "" }
-        }
-    }
-
-    Process { id: wifiConnProc; command:[]; running:false
-        onRunningChanged: { if(!running){ wifiProc.running=true; wifiScanProc.running=true } }
-    }
-
-    // nmcli connect with password
-    property string _wifiPassBuf: ""
-    Process {
-        id: wifiPassProc
-        command: []
-        running: false
-        stdout: SplitParser { onRead: function(l) { root._wifiPassBuf += l + "\n" } }
-        stderr: SplitParser { onRead: function(l) { root._wifiPassBuf += l + "\n" } }
-        onRunningChanged: {
-            if (!running) {
-                var out = root._wifiPassBuf.toLowerCase()
-                root._wifiPassBuf = ""
-                if (out.indexOf("error") !== -1 || out.indexOf("failed") !== -1
-                        || out.indexOf("secrets") !== -1 || out.indexOf("wrong") !== -1) {
-                    root.wifiPassError = "Неверный пароль или ошибка подключения"
-                } else {
-                    root.wifiPassVisible = false
-                    root.btPanelOpen = false
-                    wifiProc.running = true
-                    btProc.running = true
-                    dndProc.running = true
-                    volProc.running = true
-                    briProc.running = true
-                }
-            }
-        }
-    }
-
-    Timer{interval:5000;repeat:true;running:true;onTriggered:wifiProc.running=true}
-    Timer{interval:8000;repeat:true;running:true;onTriggered:btProc.running=true}
-    Timer{interval:3000;repeat:true;running:true;onTriggered:volProc.running=true}
-    Timer{interval:5000;repeat:true;running:true;onTriggered:briProc.running=true}
-    Component.onCompleted:{wifiProc.running=true;btProc.running=true;volProc.running=true;briProc.running=true}
+    Component.onCompleted:{NetworkService.update()}
 
     //reusable components
 
@@ -342,6 +171,7 @@ PanelWindow {
         property string icon:     ""
         property string title:    ""
         property string subtitle: ""
+        property color  activeTextColor: Theme.colorOnPrimaryContainer
         signal iconClicked()
         signal clicked()
 
@@ -350,7 +180,7 @@ PanelWindow {
         radius: 18
         color:  active ? root.tileActiveBg : root.tileInactiveBg
         border.width: 1
-        border.color: active ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.14) : root.tileBorder
+        border.color: active ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.28) : root.tileBorder
 
         // card-body MouseArea (covers everything, lowest z)
         MouseArea {
@@ -366,7 +196,9 @@ PanelWindow {
             // icon circle — separate toggle target (higher z)
             Rectangle {
                 Layout.preferredWidth:40; Layout.preferredHeight:40; radius:20
-                color: iconArea.containsMouse ? root.tileHover : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08)
+                color: active
+                    ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+                    : (iconArea.containsMouse ? root.tileHover : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08))
 
                 Image {
                     id: wbIconImg
@@ -379,7 +211,7 @@ PanelWindow {
                 ColorOverlay {
                     anchors.fill: wbIconImg
                     source: wbIconImg
-                    color: root.textLight
+                    color: wb.active ? wb.activeTextColor : root.textLight
                 }
 
                 MouseArea {
@@ -395,12 +227,12 @@ PanelWindow {
                 Text {
                     text:wb.title; font.pixelSize:13; font.family:"Google Sans"
                     font.weight:Font.Medium
-                    color: root.textLight
+                    color: wb.active ? wb.activeTextColor : root.textLight
                     elide:Text.ElideRight; Layout.fillWidth:true
                 }
                 Text {
                     text:wb.subtitle; font.pixelSize:11; font.family:"Google Sans"
-                    color: root.textLight
+                    color: wb.active ? wb.activeTextColor : root.textLight
                     visible: wb.subtitle !== ""
                 }
             }
@@ -408,7 +240,7 @@ PanelWindow {
             // chevron (clicks fall through to card-body)
             Text {
                 text:"›"; font.pixelSize:20; font.weight:Font.Bold
-                color: root.textLight
+                color: wb.active ? wb.activeTextColor : root.textLight
             }
         }
     }
@@ -667,14 +499,11 @@ PanelWindow {
                     subtitle: root.ethConnected ? "Connected" : root.wifiSubtitle()
                     Layout.fillWidth: true
                     onIconClicked: {
-                        cmdProc.command = root.wifiRadioOn
-                            ? ["nmcli","radio","wifi","off"]
-                            : ["nmcli","radio","wifi","on"]
-                        cmdProc.running = true
+                        NetworkService.toggleWifi()
                     }
                     onClicked: {
                         root.wifiMenuOpen = !root.wifiMenuOpen
-                        if (root.wifiMenuOpen) wifiScanProc.running = true
+                        if (root.wifiMenuOpen) NetworkService.scan()
                     }
                 }
 
@@ -685,10 +514,7 @@ PanelWindow {
                     subtitle: root.btOn ? "On" : "Off"
                     Layout.fillWidth: true
                     onIconClicked: {
-                        cmdProc.command = root.btOn
-                            ? ["rfkill","block","bluetooth"]
-                            : ["rfkill","unblock","bluetooth"]
-                        cmdProc.running = true
+                        BluetoothService.togglePower()
                     }
                     onClicked: {
                         root.btPanelOpen = true
@@ -728,12 +554,10 @@ PanelWindow {
                     subtitle: root.dndOn ? "On" : "Off"
                     Layout.fillWidth: true
                     onIconClicked: {
-                        cmdProc.command = ["bash", "-c", "if [ \"$(cat ~/.config/quickshell/dnd.txt)\" = \"true\" ]; then echo false > ~/.config/quickshell/dnd.txt; else echo true > ~/.config/quickshell/dnd.txt; fi"]
-                        cmdProc.running = true
+                        if (ConfigService.ready) ConfigService.values.dnd = !ConfigService.values.dnd
                     }
                     onClicked: {
-                        cmdProc.command = ["bash", "-c", "if [ \"$(cat ~/.config/quickshell/dnd.txt)\" = \"true\" ]; then echo false > ~/.config/quickshell/dnd.txt; else echo true > ~/.config/quickshell/dnd.txt; fi"]
-                        cmdProc.running = true
+                        if (ConfigService.ready) ConfigService.values.dnd = !ConfigService.values.dnd
                     }
                 }
             }
@@ -781,8 +605,7 @@ PanelWindow {
                             security: modelData.security
                             inUse: root.wifiConnected && modelData.ssid === root.wifiName
                             onClicked: {
-                                wifiConnProc.command = ["nmcli","con","up",modelData.ssid]
-                                wifiConnProc.running = true
+                                NetworkService.connectKnown(modelData.ssid)
                             }
                         }
                     }
@@ -820,8 +643,8 @@ PanelWindow {
 
                     // empty state
                     Text {
-                        visible: root.knownNetworks.length === 0 && root.unknownNetworks.length === 0
-                        text: "Scanning for networks…"
+                    visible: root.knownNetworks.length === 0 && root.unknownNetworks.length === 0
+                        text: NetworkService.scanning ? "Scanning for networks…" : "No networks found"
                         font.pixelSize:12; font.family:"Google Sans"; font.italic:true
                         color: root.subtextLight
                         Layout.alignment: Qt.AlignHCenter
@@ -836,21 +659,17 @@ PanelWindow {
                 rightIcon: "assets/icons/music-note.svg"
                 value: root.volume
                 onMoved: function(v) {
-                    root.volume = v
-                    volSet.command = ["wpctl","set-volume","@DEFAULT_AUDIO_SINK@",(v/100).toFixed(2)]
-                    volSet.running = true
+                    AudioService.setVolume(v)
                 }
             }
 
-            //brightness slider (currently broken)
+            //brightness slider
             SliderRow {
                 leftIcon:  "assets/icons/brightness-5.svg"
                 rightIcon: "assets/icons/wb-sunny.svg"
                 value: root.brightness
                 onMoved: function(v) {
-                    root.brightness = v
-                    briSet.command = ["brightnessctl","set",v+"%"]
-                    briSet.running = true
+                    BrightnessService.setBrightness(v)
                 }
             }
 
@@ -865,7 +684,13 @@ PanelWindow {
                 Rectangle {
                     id: powerBtn
                     implicitWidth:56; implicitHeight:38; radius:19
-                    color: powerBtnMa.containsMouse ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.85) : Theme.colorOnSurface
+                    color: root.powerMenuOpen
+                        ? root.tileActiveBg
+                        : (powerBtnMa.containsMouse ? root.tileHover : root.tileInactiveBg)
+                    border.width: 1
+                    border.color: root.powerMenuOpen
+                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.28)
+                        : root.tileBorder
                     Behavior on color { ColorAnimation { duration: 120 } }
 
                     RowLayout { anchors.centerIn:parent; spacing:4
@@ -879,9 +704,9 @@ PanelWindow {
                         ColorOverlay {
                             width: powerImg.width; height: powerImg.height
                             source: powerImg
-                            color: Theme.surface
+                            color: root.textLight
                         }
-                        Text { text:"▾"; font.pixelSize:11; color:Theme.surface; font.bold: true }
+                        Text { text:"▾"; font.pixelSize:11; color:root.textLight; font.bold: true }
                     }
 
                     MouseArea {
@@ -897,7 +722,11 @@ PanelWindow {
                 Rectangle {
                     id: settingsBtn
                     implicitWidth:38; implicitHeight:38; radius:19
-                    color: settingsBtnMa.containsMouse ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.85) : Theme.colorOnSurface
+                    color: settingsBtnMa.containsMouse
+                        ? root.tileHover
+                        : root.tileInactiveBg
+                    border.width: 1
+                    border.color: root.tileBorder
                     Behavior on color { ColorAnimation { duration: 120 } }
 
                     Image {
@@ -911,7 +740,7 @@ PanelWindow {
                     ColorOverlay {
                         anchors.fill: settingsImg
                         source: settingsImg
-                        color: Theme.surface
+                        color: root.textLight
                     }
 
                     MouseArea {
@@ -933,7 +762,7 @@ PanelWindow {
                 implicitHeight: root.powerMenuOpen ? powerMenuCol.implicitHeight + 16 : 0
                 clip: true
                 radius: 18
-                color: Theme.surface
+                color: Theme.surfaceVariant
                 border.color: Theme.outlineVariant
                 border.width: 1
                 visible: implicitHeight > 0 || heightAnim.running
@@ -965,7 +794,9 @@ PanelWindow {
                             Layout.fillWidth: true
                             implicitHeight: 42
                             radius: 12
-                            color: pmArea.containsMouse ? Theme.activeBg : "transparent"
+                            color: pmArea.containsMouse
+                                ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.14 : 0.18)
+                                : "transparent"
                             Behavior on color { ColorAnimation { duration: 100 } }
 
                             RowLayout {
@@ -1157,10 +988,7 @@ PanelWindow {
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
                     onClicked: {
-                        cmdProc.command = root.btOn
-                            ? ["rfkill","block","bluetooth"]
-                            : ["rfkill","unblock","bluetooth"]
-                        cmdProc.running = true
+                        BluetoothService.togglePower()
                     }
                 }
             }
@@ -1222,8 +1050,11 @@ PanelWindow {
                             id: pairArea; anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                             onClicked: {
-                                btScanProc.running = true
-                                btListProc.running = true
+                                if (BluetoothService.isScanning) {
+                                    BluetoothService.stopDiscovery();
+                                } else {
+                                    BluetoothService.startDiscovery();
+                                }
                             }
                         }
                     }
@@ -1284,7 +1115,7 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     spacing: 2
                                     Text {
-                                        text: modelData.name
+                                        text: modelData.name || "Unknown Device"
                                         font.pixelSize: 13; font.family: "Google Sans"
                                         font.weight: Font.Medium
                                         color: root.textLight
@@ -1304,15 +1135,7 @@ PanelWindow {
                                 id: devArea; anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                                 onClicked: {
-                                    if (modelData.connected) {
-                                        cmdProc.command = ["bash", "-c", "bluetoothctl disconnect " + modelData.mac]
-                                    } else if (modelData.paired) {
-                                        cmdProc.command = ["bash", "-c", "bluetoothctl connect " + modelData.mac]
-                                    } else {
-                                        cmdProc.command = ["bash", "-c", "bluetoothctl pair " + modelData.mac + " && bluetoothctl connect " + modelData.mac]
-                                    }
-                                    cmdProc.running = true
-                                    btPairProc.running = true
+                                    BluetoothService.toggleConnect(modelData)
                                 }
                             }
                         }
@@ -1564,7 +1387,7 @@ PanelWindow {
                     text: "Подключение…"
                     font.pixelSize: 11; font.family: "Google Sans"
                     color: root.activeColor
-                    visible: wifiPassProc.running
+                    visible: NetworkService.connecting
                 }
 
                 //buttons row
@@ -1606,23 +1429,18 @@ PanelWindow {
                                 return
                             }
                             root.wifiPassError = ""
-                            wifiPassProc.command = [
-                                "nmcli", "dev", "wifi", "connect",
-                                root.wifiPassSsid,
-                                "password", wifiPassField.text
-                            ]
-                            wifiPassProc.running = true
+                            NetworkService.connectWithPassword(root.wifiPassSsid, wifiPassField.text)
                         }
 
                         Layout.fillWidth: true
                         implicitHeight: 40; radius: 12
                         color: connectArea.containsMouse
                             ? Qt.lighter(root.activeColor, 1.12) : root.activeColor
-                        opacity: wifiPassProc.running ? 0.55 : 1.0
+                        opacity: NetworkService.connecting ? 0.55 : 1.0
 
                         Text {
                             anchors.centerIn: parent
-                            text: wifiPassProc.running ? "…" : "Подключиться"
+                            text: NetworkService.connecting ? "…" : "Подключиться"
                             font.pixelSize: 13; font.family: "Google Sans"
                             font.weight: Font.SemiBold
                             color: root.textDark
@@ -1630,7 +1448,7 @@ PanelWindow {
                         MouseArea {
                             id: connectArea; anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor; hoverEnabled: true
-                            enabled: !wifiPassProc.running
+                            enabled: !NetworkService.connecting
                             onClicked: connectBtn.doConnect()
                         }
                     }
