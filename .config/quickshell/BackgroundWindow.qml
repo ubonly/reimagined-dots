@@ -23,6 +23,12 @@ PanelWindow {
     property string queuedWallpaperPath: ""
     property bool wallpaperAnimating: false
 
+    function isVideo(path) {
+        if (!path) return false;
+        let p = path.toLowerCase();
+        return p.endsWith(".mp4") || p.endsWith(".webm") || p.endsWith(".mkv") || p.endsWith(".avi") || p.endsWith(".mov");
+    }
+
     // 1. Old wallpaper (always shown underneath)
     Image {
         id: bgOld
@@ -31,6 +37,9 @@ PanelWindow {
         fillMode: Image.PreserveAspectCrop
         cache: false
         asynchronous: false  // load sync so first wallpaper shows instantly
+        opacity: root.isVideo(root.lastWallpaperPath) ? 0.0 : 1.0
+        visible: opacity > 0.0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
     }
 
     // 2. New wallpaper — hidden, used as mask source
@@ -125,14 +134,24 @@ PanelWindow {
     }
 
     function applyWallpaper(filePath, reloadKey) {
-        let src = "file://" + filePath + "?v=" + reloadKey
         let sig = reloadKey + ":" + filePath
 
         if (sig === root.lastWallpaperSig || sig === root.loadingWallpaperSig || sig === root.queuedWallpaperSig) {
             return
         }
 
-        if (bgOld.source == "") {
+        if (isVideo(filePath)) {
+            // For video wallpaper: stop any active animation, immediately set lastWallpaperPath
+            root.wallpaperAnimating = false;
+            bgNew.source = "";
+            root.lastWallpaperSig = sig;
+            root.lastWallpaperPath = filePath;
+            return;
+        }
+
+        let src = "file://" + filePath + "?v=" + reloadKey
+
+        if (bgOld.source == "" || isVideo(root.lastWallpaperPath)) {
             bgOld.source = src
             root.lastWallpaperSig = sig
             root.lastWallpaperPath = filePath

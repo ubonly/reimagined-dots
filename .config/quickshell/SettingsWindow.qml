@@ -94,7 +94,7 @@ FloatingWindow {
     function setThemeMode(mode) {
         if (ConfigService.ready) {
             ConfigService.values.themeMode = mode;
-            Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/set_theme_mode.sh", mode]);
+            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", mode]);
         }
     }
 
@@ -583,7 +583,7 @@ FloatingWindow {
                                                     hasChevron: true
                                                     showDivider: true
                                                     onClicked: {
-                                                        Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/set_wallpaper.sh"])
+                                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/set_wallpaper.sh"])
                                                     }
                                                 }
                                                 RowLayout {
@@ -611,7 +611,7 @@ FloatingWindow {
                                                     hasChevron: true
                                                     showDivider: true
                                                     onClicked: {
-                                                        Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/random_konachan.sh"])
+                                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/random_konachan.sh"])
                                                     }
                                                 }
                                                 Item {
@@ -698,7 +698,7 @@ FloatingWindow {
                                                     hasChevron: true
                                                     showDivider: false
                                                     onClicked: {
-                                                        Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/random_osu.sh"])
+                                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/random_osu.sh"])
                                                     }
                                                 }
 

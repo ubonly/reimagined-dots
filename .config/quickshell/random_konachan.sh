@@ -161,10 +161,7 @@ fetch_image() {
 fetch_image "$CURRENT_IMG"
 if [ -f "${CURRENT_IMG}.path" ]; then
     curr_file=$(cat "${CURRENT_IMG}.path")
-    write_wallpaper_state "$curr_file"
-    MODE="dark"
-    if [ -f "$HOME/.config/quickshell/theme_mode.txt" ]; then
-        MODE=$(cat "$HOME/.config/quickshell/theme_mode.txt")
-    fi
-    generate_colors "$curr_file" "$MODE" &
+    # Delegate wallpaper application to set_wallpaper.sh
+    bash "$HOME/.config/quickshell/set_wallpaper.sh" "$curr_file"
 fi
+

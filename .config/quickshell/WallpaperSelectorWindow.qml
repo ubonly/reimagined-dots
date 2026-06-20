@@ -7,6 +7,7 @@ import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 import Qt.labs.folderlistmodel
 import "Theme"
+import "services"
 
 PanelWindow {
     id: wallpaperRoot
@@ -342,7 +343,7 @@ PanelWindow {
                                     if (delegateItem.isDir) {
                                         wallpaperRoot.navigateTo(delegateItem.itemFilePath);
                                     } else {
-                                        Quickshell.execDetached(["bash", "/home/ubonly/google-dots/scripts/set_wallpaper.sh", delegateItem.itemFilePath]);
+                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/set_wallpaper.sh", delegateItem.itemFilePath]);
                                         wallpaperRoot.selectorVisible = false;
                                     }
                                 }
