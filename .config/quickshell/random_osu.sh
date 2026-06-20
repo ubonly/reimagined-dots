@@ -92,13 +92,26 @@ path = sys.argv[1]
 try:
     with Image.open(path) as img:
         width, height = img.size
+        
+        if width < 1920 or height < 1080:
+            raise SystemExit(1)
+            
+        target_ratio = 16.0 / 9.0
+        current_ratio = float(width) / float(height)
+        
+        if abs(current_ratio - target_ratio) > 0.01:
+            if current_ratio > target_ratio:
+                # too wide, crop sides
+                new_width = int(height * target_ratio)
+                offset = (width - new_width) // 2
+                img = img.crop((offset, 0, offset + new_width, height))
+            else:
+                # too tall, crop top/bottom
+                new_height = int(width / target_ratio)
+                offset = (height - new_height) // 2
+                img = img.crop((0, offset, width, offset + new_height))
+            img.save(path)
 except Exception:
-    raise SystemExit(1)
-
-if width < 1920 or height < 1080:
-    raise SystemExit(1)
-
-if width * 9 != height * 16:
     raise SystemExit(1)
 PY
 }
@@ -116,14 +129,22 @@ fetch_image() {
     
     while true; do
         local link=""
-        # OSU seasonal backgrounds disabled because they have random resolutions like 3000x2200 
-        # which causes zoom/cropping issues in hyprpaper fill mode
         
-        # Use konachan with strictly 1920x1080 resolution
+        # Query osu! seasonal backgrounds API
+        local response=$(curl -s --max-time 5 "https://osu.ppy.sh/api/v2/seasonal-backgrounds")
+        if [ -n "$response" ]; then
+            local images=$(echo "$response" | jq '.backgrounds | length' -r 2>/dev/null || echo "0")
+            if [ "$images" -gt 0 ]; then
+                local randomIndex=$((RANDOM % images))
+                link=$(echo "$response" | jq ".backgrounds[$randomIndex].url" -r 2>/dev/null)
+            fi
+        fi
+        
+        # Fallback to konachan if osu! API fails
         if [ -z "$link" ] || [ "$link" = "null" ]; then
             local page=$((1 + RANDOM % 300))
-            local response=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe+width%3A1920+height%3A1080&limit=1&page=$page")
-            link=$(echo "$response" | grep -o '"file_url":"[^"]*' | grep -o 'https[^"]*')
+            local response_kc=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe+width%3A1920+height%3A1080&limit=1&page=$page")
+            link=$(echo "$response_kc" | grep -o '"file_url":"[^"]*' | grep -o 'https[^"]*')
         fi
 
         if [ -n "$link" ] && [ "$link" != "null" ]; then
@@ -141,6 +162,11 @@ fetch_image() {
                 fi
 
                 final_wallpaper=$(maybe_upscale_wallpaper "${target}.${ext}")
+
+                # Save a copy to the archive folder
+                ARCHIVE_DIR="$HOME/Pictures/Saved_Wallpapers"
+                mkdir -p "$ARCHIVE_DIR"
+                cp "${target}.${ext}" "$ARCHIVE_DIR/wallpaper_$(date +%Y%m%d_%H%M%S).${ext}"
 
                 echo "$final_wallpaper" > "${target}.path"
                 break
