@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
 
 WP="$1"
-WP_PATH_FILE="$HOME/.config/quickshell/wallpaper_path.txt"
-WP_STATE_FILE="$HOME/.config/quickshell/wallpaper_state.txt"
-WP_UPSCALE_ENABLED_FILE="$HOME/.config/quickshell/wallpaper_upscale_enabled.txt"
-WP_UPSCALE_FACTOR_FILE="$HOME/.config/quickshell/wallpaper_upscale_factor.txt"
+CONFIG_FILE="$HOME/.config/quickshell/config.json"
+UPSCALE_CACHE_DIR="$HOME/.cache/quicksALE/wallpaper-upscale"
+# Fix typo in cache dir path
 UPSCALE_CACHE_DIR="$HOME/.cache/quickshell/wallpaper-upscale"
 VIDEO_THUMBNAILS_DIR="$HOME/.cache/quickshell/video-thumbnails"
 
-write_file() {
-    local file="$1"
-    local content="$2"
-    local tmp="${file}.tmp.$$"
-    printf '%s\n' "$content" > "$tmp" && mv "$tmp" "$file"
+read_config_val() {
+    local key="$1"
+    local fallback="$2"
+    if [ -f "$CONFIG_FILE" ]; then
+        local val
+        val=$(jq -r ".${key}" "$CONFIG_FILE" 2>/dev/null)
+        if [ "$val" != "null" ] && [ -n "$val" ]; then
+            printf '%s\n' "$val"
+            return 0
+        fi
+    fi
+    printf '%s\n' "$fallback"
 }
 
-read_setting() {
-    local file="$1"
-    local fallback="$2"
-    if [ -f "$file" ]; then
-        cat "$file" 2>/dev/null | head -n1
+write_config_val() {
+    local key="$1"
+    local value="$2"
+    local tmp="${CONFIG_FILE}.tmp.$$"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        printf '{\n  "%s": %s\n}\n' "$key" "$value" > "$CONFIG_FILE"
     else
-        printf '%s\n' "$fallback"
+        jq ".${key} = ${value}" "$CONFIG_FILE" > "$tmp" && mv "$tmp" "$CONFIG_FILE"
     fi
 }
 
@@ -43,8 +50,8 @@ maybe_upscale_wallpaper() {
         return 0
     fi
 
-    enabled=$(read_setting "$WP_UPSCALE_ENABLED_FILE" "false" | tr '[:upper:]' '[:lower:]')
-    factor=$(read_setting "$WP_UPSCALE_FACTOR_FILE" "2")
+    enabled=$(read_config_val "wallpaperUpscaleEnabled" "false" | tr '[:upper:]' '[:lower:]')
+    factor=$(read_config_val "wallpaperUpscaleFactor" "2")
 
     if [ "$enabled" != "true" ] || { [ "$factor" != "2" ] && [ "$factor" != "4" ]; }; then
         printf '%s\n' "$input"
@@ -95,11 +102,11 @@ fi
 FINAL_WP="$(maybe_upscale_wallpaper "$WP")"
 
 # Save the path
-write_file "$WP_PATH_FILE" "$FINAL_WP"
-write_file "$WP_STATE_FILE" "$(date +%s%N)|$FINAL_WP"
+write_config_val "wallpaperPath" "\"$FINAL_WP\""
+write_config_val "wallpaperState" "\"$(date +%s%N)|$FINAL_WP\""
 
 # Get theme mode
-MODE=$(cat "$HOME/.config/quickshell/theme_mode.txt" 2>/dev/null || echo "dark")
+MODE=$(read_config_val "themeMode" "dark")
 if [ "$MODE" != "dark" ] && [ "$MODE" != "light" ]; then
     MODE="dark"
 fi

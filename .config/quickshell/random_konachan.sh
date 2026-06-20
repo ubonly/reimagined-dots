@@ -9,34 +9,22 @@ done
 
 PICTURES_DIR="$HOME/Pictures/Wallpapers"
 mkdir -p "$PICTURES_DIR"
-WP_PATH_FILE="$HOME/.config/quickshell/wallpaper_path.txt"
-WP_STATE_FILE="$HOME/.config/quickshell/wallpaper_state.txt"
-UPSCALE_ENABLED_FILE="$HOME/.config/quickshell/wallpaper_upscale_enabled.txt"
-UPSCALE_FACTOR_FILE="$HOME/.config/quickshell/wallpaper_upscale_factor.txt"
+CONFIG_FILE="$HOME/.config/quickshell/config.json"
 UPSCALE_CACHE_DIR="$HOME/.cache/quickshell/wallpaper-upscale"
 CURRENT_IMG="$PICTURES_DIR/random_konachan"
 
-write_file() {
-    local file="$1"
-    local content="$2"
-    local tmp="${file}.tmp.$$"
-    printf '%s\n' "$content" > "$tmp" && mv "$tmp" "$file"
-}
-
-write_wallpaper_state() {
-    local image="$1"
-    write_file "$WP_PATH_FILE" "$image"
-    write_file "$WP_STATE_FILE" "$(date +%s%N)|$image"
-}
-
-read_setting() {
-    local file="$1"
+read_config_val() {
+    local key="$1"
     local fallback="$2"
-    if [ -f "$file" ]; then
-        cat "$file" 2>/dev/null | head -n1
-    else
-        printf '%s\n' "$fallback"
+    if [ -f "$CONFIG_FILE" ]; then
+        local val
+        val=$(jq -r ".${key}" "$CONFIG_FILE" 2>/dev/null)
+        if [ "$val" != "null" ] && [ -n "$val" ]; then
+            printf '%s\n' "$val"
+            return 0
+        fi
     fi
+    printf '%s\n' "$fallback"
 }
 
 maybe_upscale_wallpaper() {
@@ -45,8 +33,8 @@ maybe_upscale_wallpaper() {
     local factor
     local upscaler=""
 
-    enabled=$(read_setting "$UPSCALE_ENABLED_FILE" "false" | tr '[:upper:]' '[:lower:]')
-    factor=$(read_setting "$UPSCALE_FACTOR_FILE" "2")
+    enabled=$(read_config_val "wallpaperUpscaleEnabled" "false" | tr '[:upper:]' '[:lower:]')
+    factor=$(read_config_val "wallpaperUpscaleFactor" "2")
 
     if [ "$enabled" != "true" ] || { [ "$factor" != "2" ] && [ "$factor" != "4" ]; }; then
         printf '%s\n' "$input"

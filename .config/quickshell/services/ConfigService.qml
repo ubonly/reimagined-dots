@@ -27,21 +27,7 @@ Singleton {
         repeat: false
         onTriggered: {
             configFileView.writeAdapter()
-            // Write legacy fallbacks for shell scripts
-            writeTxt("theme_mode.txt", configJsonAdapter.themeMode)
-            writeTxt("dock_style.txt", configJsonAdapter.dockStyle)
-            writeTxt("dock_transparency_enabled.txt", configJsonAdapter.dockTransparencyEnabled ? "true" : "false")
-            writeTxt("dock_opacity.txt", configJsonAdapter.dockOpacity.toFixed(2))
-            writeTxt("dock_icon_fill_enabled.txt", configJsonAdapter.dockIconFillEnabled ? "true" : "false")
-            writeTxt("konachan_tags.txt", configJsonAdapter.konachanTags)
-            writeTxt("wallpaper_upscale_enabled.txt", configJsonAdapter.wallpaperUpscaleEnabled ? "true" : "false")
-            writeTxt("wallpaper_upscale_factor.txt", configJsonAdapter.wallpaperUpscaleFactor.toString())
-            writeTxt("dnd.txt", configJsonAdapter.dnd ? "true" : "false")
         }
-    }
-
-    function writeTxt(filename, content) {
-        Quickshell.execDetached(["bash", "-c", "echo '" + content + "' > " + configDir + "/" + filename])
     }
 
     FileView {
@@ -76,6 +62,8 @@ Singleton {
             property bool wallpaperUpscaleEnabled: false
             property int wallpaperUpscaleFactor: 2
             property bool dnd: false
+            property string wallpaperPath: ""
+            property string wallpaperState: ""
         }
     }
 }

@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Qt5Compat.GraphicalEffects
+import "services"
 
 PanelWindow {
     id: root
@@ -170,25 +171,54 @@ PanelWindow {
         // animation starts in onStatusChanged when image is ready
     }
 
-    Process {
-        id: wallpaperWatchProc
-        running: true
-        command: ["bash", "-c", "state=/home/ubonly/.config/quickshell/wallpaper_state.txt; path=/home/ubonly/.config/quickshell/wallpaper_path.txt; touch \"$state\"; if [ -s \"$state\" ]; then cat \"$state\"; elif [ -s \"$path\" ]; then printf '0|%s\\n' \"$(head -n1 \"$path\")\"; fi; tail -n 0 -F \"$state\" 2>/dev/null"]
-        stdout: SplitParser {
-            onRead: data => {
-                let raw = data.trim()
-                if (raw === "") return
+    // Apply the initial wallpaper once ConfigService is ready
+    Component.onCompleted: {
+        if (ConfigService.ready) {
+            applyInitialWallpaper();
+        }
+    }
 
-                let sep = raw.indexOf("|")
-                if (sep < 0) return
-
-                let reloadKey = raw.substring(0, sep)
-                let p = raw.substring(sep + 1)
-                let sig = reloadKey + ":" + p
-                if (p !== "" && sig !== root.lastWallpaperSig) {
-                    root.applyWallpaper(p, reloadKey)
-                }
+    Connections {
+        target: ConfigService
+        ignoreUnknownSignals: true
+        
+        function onReadyChanged() {
+            if (ConfigService.ready) {
+                applyInitialWallpaper();
             }
+        }
+
+        function onValuesChanged() {
+            if (ConfigService.ready) {
+                applyConfigWallpaper();
+            }
+        }
+    }
+
+    function applyInitialWallpaper() {
+        var raw = ConfigService.values.wallpaperState;
+        if (raw && raw !== "") {
+            applyConfigWallpaper();
+        } else {
+            var path = ConfigService.values.wallpaperPath;
+            if (path && path !== "") {
+                root.applyWallpaper(path, "0");
+            }
+        }
+    }
+
+    function applyConfigWallpaper() {
+        var raw = ConfigService.values.wallpaperState;
+        if (!raw || raw === "") return;
+
+        var sep = raw.indexOf("|");
+        if (sep < 0) return;
+
+        var reloadKey = raw.substring(0, sep);
+        var p = raw.substring(sep + 1);
+        var sig = reloadKey + ":" + p;
+        if (p !== "" && sig !== root.lastWallpaperSig) {
+            root.applyWallpaper(p, reloadKey);
         }
     }
 }
