@@ -15,11 +15,14 @@ Item {
     property int wsId: 1
     property var clientsByWs: ({})
     property var clientIconsByWs: ({})
+    property bool dockIconFillEnabled: false
+    property color dockIconFillColor: Theme.primary
 
     readonly property bool   isFocused:   Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace !== undefined && Hyprland.focusedWorkspace.id === wsId
     readonly property string windowClass: (clientsByWs && clientsByWs[wsId]) ? clientsByWs[wsId] : ""
     readonly property string iconPath:    (clientIconsByWs && clientIconsByWs[wsId]) ? clientIconsByWs[wsId] : ""
     readonly property bool   hasWindows:  windowClass !== ""
+    readonly property bool   hasResolvedIcon: iconPath.length > 0
 
     implicitWidth:  52
     implicitHeight: 52
@@ -64,16 +67,40 @@ Item {
             width:  root.isFocused ? 28 : 24
             height: width
 
-            source: (root.hasWindows && root.iconPath.length > 0) ? ("file://" + root.iconPath) : ""
+            source: root.hasResolvedIcon ? ("file://" + root.iconPath) : "assets/icons/apps.svg"
 
             smooth: true; mipmap: true
             cache: false
             sourceSize: Qt.size(64, 64)
             fillMode: Image.PreserveAspectFit
+            visible: !root.dockIconFillEnabled
             opacity: root.isFocused ? 1.0 : 0.72
             scale:   mouse.containsMouse ? 1.12 : 1.0
             Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Behavior on scale   { NumberAnimation { duration: 160; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+        }
+
+        ColorOverlay {
+            id: iconTintSource
+            anchors.centerIn: iconImg
+            width:  iconImg.width
+            height: iconImg.height
+            source: iconImg
+            color: root.dockIconFillColor
+            visible: false
+        }
+
+        Blend {
+            anchors.centerIn: iconImg
+            width:  iconImg.width
+            height: iconImg.height
+            source: iconImg
+            foregroundSource: iconTintSource
+            mode: "color"
+            opacity: root.dockIconFillEnabled ? (root.isFocused ? 1.0 : 0.84) : 0.0
+            visible: opacity > 0.0
+            scale: iconImg.scale
             Behavior on opacity { NumberAnimation { duration: 160 } }
         }
     }

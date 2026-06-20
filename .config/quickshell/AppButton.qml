@@ -3,6 +3,7 @@
 // appCmd   — command to launch
 import Quickshell
 import Quickshell.Hyprland
+import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Layouts
 import "Theme"
@@ -12,6 +13,8 @@ Item {
     property string iconName: "application-x-executable"
     property string appName:  "App"
     property string appCmd:   ""
+    property bool dockIconFillEnabled: false
+    property color dockIconFillColor: Theme.primary
 
     implicitWidth:  46
     implicitHeight: 46
@@ -44,10 +47,24 @@ Item {
             antialiasing: true
             mipmap:       true
             fillMode:     Image.PreserveAspectFit
+            visible: !root.dockIconFillEnabled
+        }
 
+        ColorOverlay {
+            id: iconTintSource
+            anchors.fill: icon
+            source: icon
+            color: root.dockIconFillColor
+            visible: false
+        }
 
-
-
+        Blend {
+            anchors.fill: icon
+            source: icon
+            foregroundSource: iconTintSource
+            mode: "color"
+            opacity: root.dockIconFillEnabled ? 1.0 : 0.0
+            visible: opacity > 0.0
         }
 
         // dot "app launched"
