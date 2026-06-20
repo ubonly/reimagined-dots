@@ -735,4 +735,8 @@ ShellRoot {
     WallpaperSelectorWindow {
         id: wallpaperSelector
     }
+
+    OnScreenDisplay {
+        id: osdOverlay
+    }
 }
