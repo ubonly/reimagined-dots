@@ -159,10 +159,46 @@ fetch_image() {
     done
 }
 
+PROVIDER="konachan"
+PREFETCH_DIR="$HOME/.cache/quickshell/prefetch"
+mkdir -p "$PREFETCH_DIR"
+
+if [ "$1" = "--fetch-only" ]; then
+    fetch_image "$PREFETCH_DIR/next_${PROVIDER}"
+    exit 0
+fi
+
+PREFETCHED_PATH_FILE="$PREFETCH_DIR/next_${PROVIDER}.path"
+PREFETCHED_IMG=""
+if [ -f "$PREFETCHED_PATH_FILE" ]; then
+    PREFETCHED_IMG=$(cat "$PREFETCHED_PATH_FILE" 2>/dev/null)
+fi
+
+if [ -n "$PREFETCHED_IMG" ] && [ -f "$PREFETCHED_IMG" ]; then
+    echo "Используем предзагруженные обои: $PREFETCHED_IMG"
+    ext="${PREFETCHED_IMG##*.}"
+    cp "$PREFETCHED_IMG" "${CURRENT_IMG}.${ext}"
+    echo "${CURRENT_IMG}.${ext}" > "${CURRENT_IMG}.path"
+    
+    # Удаляем manifest, чтобы не использовать дважды
+    rm -f "$PREFETCHED_PATH_FILE"
+    
+    # Мгновенно применяем обои
+    bash "$HOME/.config/quickshell/set_wallpaper.sh" "${CURRENT_IMG}.${ext}"
+    
+    # Запускаем фоновое скачивание на следующий раз
+    nohup bash "$0" --fetch-only >/dev/null 2>&1 &
+    exit 0
+fi
+
+# Кэш пуст (первый запуск)
+echo "Кэш пуст, скачиваем в переднем плане..."
 fetch_image "$CURRENT_IMG"
 if [ -f "${CURRENT_IMG}.path" ]; then
     curr_file=$(cat "${CURRENT_IMG}.path")
-    # Delegate wallpaper application to set_wallpaper.sh
     bash "$HOME/.config/quickshell/set_wallpaper.sh" "$curr_file"
 fi
+
+# Запускаем фоновое скачивание на будущее
+nohup bash "$0" --fetch-only >/dev/null 2>&1 &
 
