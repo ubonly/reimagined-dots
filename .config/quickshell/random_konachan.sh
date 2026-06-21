@@ -116,18 +116,14 @@ fetch_image() {
     local target="$1"
     
     while true; do
-        # Use wallhaven for much higher quality natively (at least 1920x1080)
-        local response=$(curl -s --max-time 5 "https://wallhaven.cc/api/v1/search?categories=010&purity=100&sorting=random&atleast=1920x1080&ratios=16x9&seed=$RANDOM")
+        local page=$((1 + RANDOM % 1000))
+        local response
+        response=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe&limit=1&page=$page")
         
         local link=""
         if command -v jq &>/dev/null; then
-            link=$(echo "$response" | jq '.data[0].path' -r 2>/dev/null)
-        fi
-
-        # Fallback to konachan if wallhaven fails
-        if [ -z "$link" ] || [ "$link" = "null" ]; then
-            local page=$((1 + RANDOM % 500))
-            response=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe+width%3A1920+height%3A1080&limit=1&page=$page")
+            link=$(echo "$response" | jq -r '.[0].file_url' 2>/dev/null)
+        else
             link=$(echo "$response" | grep -o '"file_url":"[^"]*' | grep -o 'https[^"]*')
         fi
 
