@@ -36,7 +36,15 @@ Item {
     property color switchOffColor: outlineVariant
     property color switchKnob: colorOnSurface
     property color dividerColor: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.1)
-    property color dockBg: Qt.rgba(surfaceVariant.r, surfaceVariant.g, surfaceVariant.b, isLight ? 0.92 : 0.95)
+    property color dockBg: {
+        let base = surfaceVariant;
+        let tint = primary;
+        let strength = isLight ? 0.08 : 0.12;
+        let r = base.r * (1 - strength) + tint.r * strength;
+        let g = base.g * (1 - strength) + tint.g * strength;
+        let b = base.b * (1 - strength) + tint.b * strength;
+        return Qt.rgba(r, g, b, isLight ? 0.92 : 0.95);
+    }
     property color dockBorder: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.14 : 0.08)
     property color dockPill: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.08 : 0.10)
     property color dockPillHover: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.14 : 0.16)
