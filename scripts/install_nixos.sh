@@ -7,17 +7,35 @@ echo "│          NixOS Configuration Guide          │"
 echo "└─────────────────────────────────────────────┘"
 echo ""
 echo "NixOS управляет пакетами декларативно через configuration.nix или Home Manager."
-echo "Поэтому автоматическая системная установка пакетов скриптом невозможна."
+echo "В этом репозитории реализован Nix Flake с готовым модулем Home Manager,"
+echo "который автоматически установит все пакеты и подключит нужные конфиги!"
 echo ""
-echo "Шаг 1: Добавьте следующие пакеты в ваш configuration.nix или home.nix:"
+echo "Способ 1: Автоматическая установка через Home Manager (Flakes)"
 echo "------------------------------------------------------------------"
+echo "1. Добавьте этот репозиторий в inputs вашего flake.nix:"
+cat << 'EOF'
+inputs = {
+  reimagined-dots.url = "github:ubonly/reimagined-dots";
+};
+EOF
+echo ""
+echo "2. Импортируйте модуль и включите его в вашем home.nix:"
+cat << 'EOF'
+imports = [
+  inputs.reimagined-dots.homeManagerModules.default
+];
+
+programs.quickshell-reimagined.enable = true;
+EOF
+echo "------------------------------------------------------------------"
+echo ""
+echo "Способ 2: Классический вариант (без Home Manager)"
+echo "------------------------------------------------------------------"
+echo "Добавьте пакеты в ваш configuration.nix:"
 cat << 'EOF'
   environment.systemPackages = with pkgs; [
-    # Quickshell & Matugen (доступны в nixpkgs-unstable)
     quickshell
     matugen
-
-    # Системные зависимости
     jq
     bc
     python3
@@ -49,7 +67,7 @@ echo "------------------------------------------------------------------"
 echo ""
 
 # Download Material Symbols font if not present
-echo "Шаг 2: Шрифты"
+echo "Шрифты"
 mkdir -p "$HOME/.local/share/fonts"
 if ! fc-list : family | grep -qi "Material Symbols" 2>/dev/null; then
     read -p "Скачать и установить шрифт Material Symbols Rounded локально в ~/.local/share/fonts? (Y/n) " -n 1 -r

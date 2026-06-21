@@ -69,7 +69,34 @@ sudo apt install jq bc python3-pillow network-manager bluez wireplumber brightne
 * **Quickshell & Matugen**: Build from source (cargo / github releases).
 
 #### NixOS
-Add these package names to your `environment.systemPackages` or Home Manager config:
+
+You can install this configuration declaratively using Nix Flakes and Home Manager, or manually:
+
+##### Option A: Home Manager Module (Recommended)
+
+Add this repository to your flake inputs:
+
+```nix
+inputs = {
+  reimagined-dots.url = "github:ubonly/reimagined-dots";
+};
+```
+
+Then import the module and enable it in your home-manager configuration:
+
+```nix
+imports = [
+  inputs.reimagined-dots.homeManagerModules.default
+];
+
+programs.quickshell-reimagined.enable = true;
+```
+
+This will automatically pull all required package dependencies and symlink the `quickshell` and `matugen` configuration directories to `~/.config/`.
+
+##### Option B: Manual Installation
+
+Add the following package names to your `environment.systemPackages` or Home Manager config:
 * `pkgs.quickshell` (available in nixpkgs-unstable)
 * `pkgs.matugen` (available in nixpkgs-unstable)
 * `pkgs.jq`, `pkgs.bc`, `pkgs.python3Packages.pillow`
