@@ -28,11 +28,18 @@ FEDORA_PACKAGES=(
     "curl"
     "zenity"
     "blueman"
-    "power-profiles-daemon"
     "google-roboto-fonts"
-    "google-inter-fonts"
+    "inter-fonts"
     "hyprpaper"
 )
+
+# Проверяем наличие установленного tuned-ppd или power-profiles-daemon, чтобы избежать конфликтов
+if rpm -q tuned-ppd &>/dev/null || rpm -q power-profiles-daemon &>/dev/null; then
+    echo "Провайдер профилей питания (tuned-ppd или power-profiles-daemon) уже установлен."
+else
+    echo "Добавляем power-profiles-daemon в список установки..."
+    FEDORA_PACKAGES+=("power-profiles-daemon")
+fi
 
 echo "Установка системных пакетов Fedora через dnf..."
 echo "Пакеты: ${FEDORA_PACKAGES[*]}"
