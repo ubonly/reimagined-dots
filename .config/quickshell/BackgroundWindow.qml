@@ -178,6 +178,14 @@ PanelWindow {
         }
     }
 
+    readonly property string currentWallpaperState: ConfigService.ready ? ConfigService.values.wallpaperState : ""
+
+    onCurrentWallpaperStateChanged: {
+        if (ConfigService.ready) {
+            applyConfigWallpaper();
+        }
+    }
+
     Connections {
         target: ConfigService
         ignoreUnknownSignals: true
@@ -185,12 +193,6 @@ PanelWindow {
         function onReadyChanged() {
             if (ConfigService.ready) {
                 applyInitialWallpaper();
-            }
-        }
-
-        function onValuesChanged() {
-            if (ConfigService.ready) {
-                applyConfigWallpaper();
             }
         }
     }

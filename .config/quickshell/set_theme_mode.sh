@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 MODE="$1"
+SCHEME="$2"
 if [ "$MODE" != "dark" ] && [ "$MODE" != "light" ]; then
     MODE="dark"
 fi
@@ -34,9 +35,21 @@ write_config_val() {
 # Save theme mode to JSON config
 write_config_val "themeMode" "\"$MODE\""
 
+# If a scheme was passed directly, save it immediately to avoid race condition
+if [ -n "$SCHEME" ]; then
+    write_config_val "matugenScheme" "\"$SCHEME\""
+fi
+
+PALETTE_TYPE=$(read_config_val "matugenScheme" "scheme-tonal-spot")
+TYPE_ARGS=()
+if [ "$PALETTE_TYPE" != "auto" ] && [ -n "$PALETTE_TYPE" ]; then
+    TYPE_ARGS+=("-t" "$PALETTE_TYPE")
+fi
+
 # Rerun matugen on current wallpaper
 WP=$(read_config_val "wallpaperPath" "")
 if [ -n "$WP" ] && [ -f "$WP" ]; then
-    matugen image "$WP" -m "$MODE" --source-color-index 0 --quiet
-    matugen image "$WP" -m "$MODE" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
+    matugen image "$WP" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 --quiet
+    matugen image "$WP" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
+    python3 "$HOME/.config/quickshell/harmonize_kitty.py"
 fi

@@ -178,6 +178,12 @@ fi
 
 # Run matugen color generation using COLOR_GEN_TARGET
 if command -v matugen >/dev/null 2>&1; then
-    matugen image "$COLOR_GEN_TARGET" -m "$MODE" --source-color-index 0 --quiet
-    matugen image "$COLOR_GEN_TARGET" -m "$MODE" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
+    PALETTE_TYPE=$(read_config_val "matugenScheme" "scheme-tonal-spot")
+    TYPE_ARGS=()
+    if [ "$PALETTE_TYPE" != "auto" ] && [ -n "$PALETTE_TYPE" ]; then
+        TYPE_ARGS+=("-t" "$PALETTE_TYPE")
+    fi
+    matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 --quiet
+    matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
+    python3 "$HOME/.config/quickshell/harmonize_kitty.py"
 fi

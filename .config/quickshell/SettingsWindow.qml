@@ -53,6 +53,7 @@ FloatingWindow {
     readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
+    readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "scheme-tonal-spot"
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -70,7 +71,14 @@ FloatingWindow {
     function setThemeMode(mode) {
         if (ConfigService.ready) {
             ConfigService.values.themeMode = mode;
-            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", mode]);
+            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", mode, settingsRoot.matugenScheme]);
+        }
+    }
+
+    function setMatugenScheme(scheme) {
+        if (ConfigService.ready) {
+            ConfigService.values.matugenScheme = scheme;
+            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", settingsRoot.themeMode, scheme]);
         }
     }
 
@@ -331,7 +339,7 @@ FloatingWindow {
 
             SvgIcon {
                 iconSource: navItem.navIconSource; iconSize: 20
-                iconColor: navItem.isActive ? settingsRoot.activeItem : settingsRoot.textPrimary
+                iconColor: navItem.isActive ? Theme.colorOnPrimaryContainer : settingsRoot.textPrimary
             }
 
             ColumnLayout {
@@ -340,13 +348,13 @@ FloatingWindow {
                     text: navItem.navTitle
                     font.pixelSize: 13; font.family: "Google Sans"
                     font.weight: Font.Medium
-                    color: navItem.isActive ? settingsRoot.activeItem : settingsRoot.textPrimary
+                    color: navItem.isActive ? Theme.colorOnPrimaryContainer : settingsRoot.textPrimary
                 }
                 Text {
                     text: navItem.navSub
                     font.pixelSize: 10; font.family: "Google Sans"
                     color: navItem.isActive
-                        ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.70)
+                        ? Qt.rgba(Theme.colorOnPrimaryContainer.r, Theme.colorOnPrimaryContainer.g, Theme.colorOnPrimaryContainer.b, 0.70)
                         : settingsRoot.textSecondary
                     visible: navItem.navSub !== ""
                 }
@@ -577,6 +585,76 @@ FloatingWindow {
                                                         isActive: settingsRoot.themeMode === "dark"
                                                         titleText: "Dark"
                                                     }
+                                                }
+
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    Layout.leftMargin: 16; Layout.rightMargin: 16
+                                                    height: 1
+                                                    color: settingsRoot.dividerColor
+                                                }
+
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.topMargin: 8; Layout.bottomMargin: 16
+                                                    spacing: 12
+
+                                                    Text {
+                                                        text: "Matugen color scheme"
+                                                        font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                        color: settingsRoot.textPrimary
+                                                    }
+
+                                                    GridLayout {
+                                                        columns: 3
+                                                        rowSpacing: 8
+                                                        columnSpacing: 8
+                                                        Layout.fillWidth: true
+
+                                                        Repeater {
+                                                            model: [
+                                                                { name: "Auto", value: "auto" },
+                                                                { name: "Content", value: "scheme-content" },
+                                                                { name: "Expressive", value: "scheme-expressive" },
+                                                                { name: "Fidelity", value: "scheme-fidelity" },
+                                                                { name: "Fruit Salad", value: "scheme-fruit-salad" },
+                                                                { name: "Monochrome", value: "scheme-monochrome" },
+                                                                { name: "Neutral", value: "scheme-neutral" },
+                                                                { name: "Rainbow", value: "scheme-rainbow" },
+                                                                { name: "Tonal Spot", value: "scheme-tonal-spot" }
+                                                            ]
+
+                                                            delegate: Rectangle {
+                                                                property bool isActive: settingsRoot.matugenScheme === modelData.value
+                                                                Layout.fillWidth: true
+                                                                height: 36
+                                                                radius: 18
+                                                                color: isActive ? settingsRoot.textPrimary : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+                                                                border.color: isActive ? "transparent" : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.1)
+                                                                border.width: 1
+
+                                                                Text {
+                                                                    anchors.centerIn: parent
+                                                                    text: modelData.name
+                                                                    font.pixelSize: 12; font.family: "Google Sans"; font.weight: 500
+                                                                    color: isActive ? settingsRoot.bgColor : settingsRoot.textPrimary
+                                                                }
+
+                                                                MouseArea {
+                                                                    anchors.fill: parent
+                                                                    cursorShape: Qt.PointingHandCursor
+                                                                    onClicked: settingsRoot.setMatugenScheme(modelData.value)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    Layout.leftMargin: 16; Layout.rightMargin: 16
+                                                    height: 1
+                                                    color: settingsRoot.dividerColor
                                                 }
 
                                                 SettingsRow {

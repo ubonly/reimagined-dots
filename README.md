@@ -24,7 +24,8 @@ If you prefer to install things by hand, you will need:
 - `ttf-google-sans`
 - `ttf-material-symbols-variable-git`
 - `jq`
-- `python`
+- `bc` (for math calculations in scripts)
+- `python` & `python-pillow` (for wallpaper image validation)
 - `networkmanager`
 - `bluez-utils`
 - `wireplumber`
@@ -43,6 +44,8 @@ If you prefer to install things by hand, you will need:
 - `curl`
 - `zenity`
 - `matugen-bin`
+- `swww` or `hyprpaper` (for static wallpaper rendering)
+- `mpvpaper` (optional, for video wallpaper rendering)
 
 ## Hyprland Configuration
 
@@ -94,6 +97,13 @@ reimagined-dots/
         ├── TrayIcon.qml
         ├── Theme/
         │   └── Theme.qml
+        ├── services/
+        │   ├── ConfigService.qml
+        │   ├── AudioService.qml
+        │   ├── BluetoothService.qml
+        │   ├── BrightnessService.qml
+        │   ├── NetworkService.qml
+        │   └── MprisService.qml
         ├── list-apps.py
         ├── cliphist.py
         ├── clipboard_pin.py
@@ -101,13 +111,13 @@ reimagined-dots/
         ├── hypr-events.py
         ├── bt_list.sh
         ├── set_wallpaper.sh
+        ├── set_theme_mode.sh
         ├── random_konachan.sh
         ├── random_osu.sh
         ├── toggle-launcher.sh
         ├── toggle-clipboard.sh
+        ├── config.json
         ├── colors.json
-        ├── wallpaper_path.txt
-        ├── theme_mode.txt
         ├── apps.json
         ├── recent-apps.json
         └── assets/icons/

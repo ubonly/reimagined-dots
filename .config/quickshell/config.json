@@ -7,5 +7,6 @@
     "konachanTags": "",
     "themeMode": "dark",
     "wallpaperUpscaleEnabled": false,
-    "wallpaperUpscaleFactor": 2
+    "wallpaperUpscaleFactor": 2,
+    "matugenScheme": "scheme-tonal-spot"
 }

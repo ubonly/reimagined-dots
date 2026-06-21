@@ -34,7 +34,7 @@ PanelWindow {
     // ── Folder model (shows both dirs and images) ──────────────────────────
     FolderListModel {
         id: folderModel
-        folder: "file:///home/ubonly/Pictures/Wallpapers"
+        folder: "file:///home/ubonly/Pictures/Saved_Wallpapers"
         showDirs: true
         showDotAndDotDot: false
         showOnlyReadable: true
@@ -66,7 +66,7 @@ PanelWindow {
         { icon: "🏠", name: "Home",       path: "/home/ubonly" },
         { icon: "🖼️", name: "Pictures",   path: "/home/ubonly/Pictures" },
         { icon: "📥", name: "Downloads",  path: "/home/ubonly/Downloads" },
-        { icon: "🎨", name: "Wallpapers", path: "/home/ubonly/Pictures/Wallpapers" },
+        { icon: "🎨", name: "Wallpapers", path: "/home/ubonly/Pictures/Saved_Wallpapers" },
     ]
 
     // ─── CLICK OUTSIDE TO CLOSE ───────────────────────────────────────────
