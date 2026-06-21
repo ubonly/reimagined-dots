@@ -38,31 +38,34 @@ PanelWindow {
         fillMode: Image.PreserveAspectCrop
         cache: false
         asynchronous: false  // load sync so first wallpaper shows instantly
-        opacity: root.isVideo(root.lastWallpaperPath) ? 0.0 : 1.0
-        visible: opacity > 0.0
-        Behavior on opacity { NumberAnimation { duration: 500 } }
     }
 
-    // 2. New wallpaper — hidden, used as mask source
+    // 2. New wallpaper (fades in on top)
     Image {
         id: bgNew
         anchors.fill: parent
         source: ""
         fillMode: Image.PreserveAspectCrop
-        visible: false
         cache: false
         asynchronous: true
+        opacity: 0.0
 
-        // Start animation ONLY when image is fully loaded
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 250
+                easing.type: Easing.OutCubic
+            }
+        }
+
         onStatusChanged: {
             if (status === Image.Ready) {
                 if (root.loadingWallpaperSig !== "") {
                     root.wallpaperAnimating = true
-                    circleMask.scale = 0.0
-                    growAnim.restart()
+                    opacity = 1.0
                 }
             } else if (status === Image.Error) {
                 if (root.loadingWallpaperSig !== "") {
+                    opacity = 0.0
                     bgNew.source = ""
                     root.loadingWallpaperSig = ""
                     root.loadingWallpaperPath = ""
@@ -77,59 +80,24 @@ PanelWindow {
                 }
             }
         }
-    }
 
-    // 3. Circle mask
-    Item {
-        id: maskRoot
-        anchors.fill: parent
-        visible: false
-        Rectangle {
-            id: circleMask
-            width: 100
-            height: 100
-            radius: 50
-            anchors.centerIn: parent
-            color: "white"
-            scale: 0.0
-        }
-    }
-
-    // 4. Masked new wallpaper
-    OpacityMask {
-        anchors.fill: parent
-        source: bgNew
-        maskSource: maskRoot
-        visible: bgNew.source != ""
-    }
-
-    property real maxScale: (Math.sqrt(root.width * root.width + root.height * root.height) * 1.5) / 100.0
-
-    // 5. Grow animation
-    NumberAnimation {
-        id: growAnim
-        target: circleMask
-        property: "scale"
-        from: 0.0
-        to: root.maxScale
-        duration: 400
-        easing.type: Easing.OutCubic
-
-        onFinished: {
-            bgOld.source = bgNew.source
-            circleMask.scale = 0.0
-            bgNew.source = ""
-            root.lastWallpaperSig = root.loadingWallpaperSig
-            root.lastWallpaperPath = root.loadingWallpaperPath
-            root.loadingWallpaperSig = ""
-            root.loadingWallpaperPath = ""
-            root.wallpaperAnimating = false
-            if (root.queuedWallpaperSig !== "") {
-                let queuedSig = root.queuedWallpaperSig
-                let queuedPath = root.queuedWallpaperPath
-                root.queuedWallpaperSig = ""
-                root.queuedWallpaperPath = ""
-                root.applyWallpaper(queuedPath, queuedSig)
+        onOpacityChanged: {
+            if (opacity === 1.0 && root.wallpaperAnimating) {
+                bgOld.source = bgNew.source
+                opacity = 0.0
+                bgNew.source = ""
+                root.lastWallpaperSig = root.loadingWallpaperSig
+                root.lastWallpaperPath = root.loadingWallpaperPath
+                root.loadingWallpaperSig = ""
+                root.loadingWallpaperPath = ""
+                root.wallpaperAnimating = false
+                if (root.queuedWallpaperSig !== "") {
+                    let queuedSig = root.queuedWallpaperSig
+                    let queuedPath = root.queuedWallpaperPath
+                    root.queuedWallpaperSig = ""
+                    root.queuedWallpaperPath = ""
+                    root.applyWallpaper(queuedPath, queuedSig)
+                }
             }
         }
     }
