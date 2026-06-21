@@ -30,7 +30,6 @@ DEBIAN_PACKAGES=(
     "blueman"
     "power-profiles-daemon"
     "fonts-roboto"
-    "fonts-inter"
     "hyprpaper"
 )
 
@@ -65,18 +64,37 @@ else
     echo "Конфликтов с уведомлениями не найдено."
 fi
 
-# 3. Download Material Symbols Rounded Font (required for icons)
+# 3. Download Fonts (required for icons and UI styling)
 echo ""
 echo "Проверка шрифтов..."
 mkdir -p "$HOME/.local/share/fonts"
-if ! fc-list : family | grep -qi "Material Symbols"; then
+NEED_FC_CACHE=0
+
+# Material Symbols
+if ! fc-list : family | grep -qi "Material Symbols" 2>/dev/null; then
     echo "Скачивание шрифта Material Symbols Rounded..."
     curl -L -o "$HOME/.local/share/fonts/MaterialSymbolsRounded.ttf" \
         "https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsRounded%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
+    NEED_FC_CACHE=1
+fi
+
+# Inter
+if ! fc-list : family | grep -qi "Inter" 2>/dev/null; then
+    echo "Скачивание шрифта Inter..."
+    curl -L -o "$HOME/.local/share/fonts/Inter-Regular.ttf" \
+        "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Regular.ttf"
+    curl -L -o "$HOME/.local/share/fonts/Inter-Medium.ttf" \
+        "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Medium.ttf"
+    curl -L -o "$HOME/.local/share/fonts/Inter-Bold.ttf" \
+        "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.ttf"
+    NEED_FC_CACHE=1
+fi
+
+if [ $NEED_FC_CACHE -eq 1 ]; then
     fc-cache -f "$HOME/.local/share/fonts"
-    echo "Шрифт Material Symbols Rounded установлен."
+    echo "Шрифты успешно установлены и кэш обновлен."
 else
-    echo "Шрифт Material Symbols Rounded уже установлен."
+    echo "Все необходимые шрифты уже установлены."
 fi
 
 # 4. Check for Cargo and compile Quickshell and Matugen if needed
