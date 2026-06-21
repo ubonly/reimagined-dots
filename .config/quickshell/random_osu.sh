@@ -81,7 +81,7 @@ try:
     with Image.open(path) as img:
         width, height = img.size
         
-        if width < 1920 or height < 1080:
+        if width < 1024 or height < 576:
             raise SystemExit(1)
             
         target_ratio = 16.0 / 9.0
@@ -118,8 +118,10 @@ fetch_image() {
     while true; do
         local link=""
         
+        local UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        
         # Query osu! seasonal backgrounds API
-        local response=$(curl -s --max-time 5 "https://osu.ppy.sh/api/v2/seasonal-backgrounds")
+        local response=$(curl -s -A "$UA" --max-time 5 "https://osu.ppy.sh/api/v2/seasonal-backgrounds")
         if [ -n "$response" ]; then
             local images=$(echo "$response" | jq '.backgrounds | length' -r 2>/dev/null || echo "0")
             if [ "$images" -gt 0 ]; then
@@ -131,7 +133,7 @@ fetch_image() {
         # Fallback to konachan if osu! API fails
         if [ -z "$link" ] || [ "$link" = "null" ]; then
             local page=$((1 + RANDOM % 300))
-            local response_kc=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe+width%3A1920+height%3A1080&limit=1&page=$page")
+            local response_kc=$(curl -s -A "$UA" --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe&limit=1&page=$page")
             link=$(echo "$response_kc" | grep -o '"file_url":"[^"]*' | grep -o 'https[^"]*')
         fi
 
@@ -141,7 +143,7 @@ fetch_image() {
             [[ "$ext" =~ ^(jpg|png|jpeg|webp)$ ]] || ext="jpg"
             
             # Download with 3 second timeout
-            curl -sL --max-time 3 "$link" -o "${target}.${ext}"
+            curl -sL -A "$UA" --max-time 3 "$link" -o "${target}.${ext}"
             
             if [ $? -eq 0 ] && [ -s "${target}.${ext}" ]; then
                 if ! validate_wallpaper "${target}.${ext}"; then

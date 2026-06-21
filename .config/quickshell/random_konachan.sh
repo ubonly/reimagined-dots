@@ -81,7 +81,7 @@ try:
     with Image.open(path) as img:
         width, height = img.size
         
-        if width < 1920 or height < 1080:
+        if width < 1024 or height < 576:
             raise SystemExit(1)
             
         target_ratio = 16.0 / 9.0
@@ -118,7 +118,9 @@ fetch_image() {
     while true; do
         local page=$((1 + RANDOM % 1000))
         local response
-        response=$(curl -s --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe&limit=1&page=$page")
+        local UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        local response
+        response=$(curl -s -A "$UA" --max-time 5 "https://konachan.net/post.json?tags=rating%3Asafe&limit=1&page=$page")
         
         local link=""
         if command -v jq &>/dev/null; then
@@ -133,7 +135,7 @@ fetch_image() {
             [[ "$ext" =~ ^(jpg|png|jpeg|webp)$ ]] || ext="jpg"
             
             # Download with 3 second timeout
-            curl -sL --max-time 3 "$link" -o "${target}.${ext}"
+            curl -sL -A "$UA" --max-time 3 "$link" -o "${target}.${ext}"
             
             if [ $? -eq 0 ] && [ -s "${target}.${ext}" ]; then
                 if ! validate_wallpaper "${target}.${ext}"; then
