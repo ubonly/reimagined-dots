@@ -89,6 +89,126 @@ FloatingWindow {
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    //  SYSTEM METRICS & PREFERENCES PROCESSES
+    // ══════════════════════════════════════════════════════════════════════
+    Process {
+        id: storageQueryProc
+        property string storageUsed: "0 GB"
+        property string storageTotal: "0 GB"
+        property string storageFree: "0 GB"
+        property real storagePercent: 0.0
+
+        command: ["bash", "-c", "df -h / | tail -n 1 | awk '{print $3 \"|\" $2 \"|\" $4 \"|\" $5}'"]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        stdout: SplitParser {
+            onRead: function(line) {
+                var parts = line.trim().split("|");
+                if (parts.length >= 4) {
+                    storageQueryProc.storageUsed = parts[0];
+                    storageQueryProc.storageTotal = parts[1];
+                    storageQueryProc.storageFree = parts[2];
+                    var pct = parseFloat(parts[3].replace("%", "")) / 100.0;
+                    storageQueryProc.storagePercent = isNaN(pct) ? 0.0 : pct;
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 10000; repeat: true
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        triggeredOnStart: true
+        onTriggered: storageQueryProc.running = true
+    }
+
+    Process {
+        id: powerProfileQuery
+        property string currentProfile: "balanced"
+
+        command: ["bash", "-c", "command -v powerprofilesctl >/dev/null && powerprofilesctl get || echo 'balanced'"]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        stdout: SplitParser {
+            onRead: function(line) {
+                powerProfileQuery.currentProfile = line.trim();
+            }
+        }
+
+        function setProfile(profile) {
+            powerProfileSetter.profileToSet = profile;
+            powerProfileSetter.running = true;
+        }
+    }
+
+    Process {
+        id: powerProfileSetter
+        property string profileToSet: ""
+        command: ["bash", "-c", "command -v powerprofilesctl >/dev/null && powerprofilesctl set " + profileToSet + " || true"]
+        running: false
+        onRunningChanged: {
+            if (!running) {
+                powerProfileQuery.running = true; // refresh
+            }
+        }
+    }
+
+    Timer {
+        interval: 5000; repeat: true
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        triggeredOnStart: true
+        onTriggered: powerProfileQuery.running = true
+    }
+
+    Process {
+        id: localeQuery
+        property string rawLocale: "en_US.UTF-8"
+        property string localeName: "English (United States)"
+
+        command: ["bash", "-c", "echo $LANG"]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        stdout: SplitParser {
+            onRead: function(line) {
+                var lang = line.trim();
+                localeQuery.rawLocale = lang;
+                if (lang.indexOf("ru") === 0) {
+                    localeQuery.localeName = "Русский (Россия)";
+                } else if (lang.indexOf("en_US") === 0) {
+                    localeQuery.localeName = "English (United States)";
+                } else if (lang.indexOf("en_GB") === 0) {
+                    localeQuery.localeName = "English (United Kingdom)";
+                } else {
+                    localeQuery.localeName = lang;
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 30000; repeat: true
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        triggeredOnStart: true
+        onTriggered: localeQuery.running = true
+    }
+
+    Process {
+        id: layoutQuery
+        property string layouts: "us,ru"
+        command: ["bash", "-c", "hyprctl devices -j | jq -r '.keyboards[0].rules' 2>/dev/null || echo 'us,ru'"]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        stdout: SplitParser {
+            onRead: function(line) {
+                layoutQuery.layouts = line.trim();
+            }
+        }
+    }
+
+    Timer {
+        interval: 10000; repeat: true
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        triggeredOnStart: true
+        onTriggered: layoutQuery.running = true
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     //  HELPER: SVG icon with color overlay
     // ══════════════════════════════════════════════════════════════════════
     component SvgIcon: Item {
@@ -282,10 +402,11 @@ FloatingWindow {
                         Rectangle {
                             Layout.fillWidth: true; height: 24
                             radius: 12; color: tCard.isActive ? Theme.primary : tCard.previewFg
-                            SvgIcon {
+                            Text {
                                 anchors.centerIn: parent
-                                iconSource: "assets/icons/check.svg"
-                                iconSize: 14; iconColor: tCard.previewBg
+                                text: "✓"
+                                font.pixelSize: 14; font.bold: true
+                                color: tCard.previewBg
                                 visible: tCard.isActive
                             }
                         }
@@ -528,7 +649,7 @@ FloatingWindow {
                                     Item {
                                         Layout.fillWidth: true
                                         implicitHeight: 120
-                                        visible: settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4
+                                         visible: settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6
                                         Text {
                                             anchors.centerIn: parent
                                             text: "Coming soon"
@@ -887,7 +1008,262 @@ FloatingWindow {
                                             }
                                         }
                                     }
-                                }
+
+                                     // PAGE 6: System Preferences
+                                     ColumnLayout {
+                                         visible: settingsRoot.currentPage === 6
+                                         Layout.fillWidth: true
+                                         spacing: 12
+
+                                         // SECTION 1: Storage and Power
+                                         Text {
+                                             text: "Storage and power"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 4
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: storagePowerCol.implicitHeight + 32
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: storagePowerCol
+                                                 anchors { fill: parent; margins: 16 }
+                                                 spacing: 16
+
+                                                 // Item 1: Storage Usage
+                                                 ColumnLayout {
+                                                     Layout.fillWidth: true
+                                                     spacing: 8
+
+                                                     RowLayout {
+                                                         Layout.fillWidth: true
+                                                         Text {
+                                                             text: "Storage management"
+                                                             font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                             color: settingsRoot.textPrimary
+                                                         }
+                                                         Item { Layout.fillWidth: true }
+                                                         Text {
+                                                             text: storageQueryProc.storageUsed + " used of " + storageQueryProc.storageTotal + " (" + storageQueryProc.storageFree + " free)"
+                                                             font.pixelSize: 12; font.family: "Google Sans"
+                                                             color: settingsRoot.textSecondary
+                                                         }
+                                                     }
+
+                                                     // Storage Bar
+                                                     Rectangle {
+                                                         Layout.fillWidth: true
+                                                         height: 8
+                                                         radius: 4
+                                                         color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
+
+                                                         Rectangle {
+                                                             width: parent.width * storageQueryProc.storagePercent
+                                                             height: parent.height
+                                                             radius: parent.radius
+                                                             color: settingsRoot.activeItem
+                                                         }
+                                                     }
+                                                 }
+
+                                                 Rectangle {
+                                                     Layout.fillWidth: true; height: 1
+                                                     color: settingsRoot.dividerColor
+                                                 }
+
+                                                 // Item 2: Power profile selection
+                                                 RowLayout {
+                                                     Layout.fillWidth: true
+                                                     spacing: 12
+
+                                                     ColumnLayout {
+                                                         spacing: 2
+                                                         Text {
+                                                             text: "Power profile"
+                                                             font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                             color: settingsRoot.textPrimary
+                                                         }
+                                                         Text {
+                                                             text: "Select active system performance and battery profile"
+                                                             font.pixelSize: 12; font.family: "Google Sans"
+                                                             color: settingsRoot.textSecondary
+                                                         }
+                                                     }
+
+                                                     Item { Layout.fillWidth: true }
+
+                                                     RowLayout {
+                                                         spacing: 8
+
+                                                         Repeater {
+                                                             model: [
+                                                                 { name: "Performance", value: "performance" },
+                                                                 { name: "Balanced", value: "balanced" },
+                                                                 { name: "Power Saver", value: "power-saver" }
+                                                             ]
+
+                                                             delegate: Rectangle {
+                                                                 property bool isActive: powerProfileQuery.currentProfile === modelData.value
+                                                                 width: pBtnText.implicitWidth + 24
+                                                                 height: 32
+                                                                 radius: 16
+                                                                 color: isActive ? settingsRoot.textPrimary : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+                                                                 border.color: isActive ? "transparent" : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.1)
+                                                                 border.width: 1
+
+                                                                 Text {
+                                                                     id: pBtnText
+                                                                     anchors.centerIn: parent
+                                                                     text: modelData.name
+                                                                     font.pixelSize: 12; font.family: "Google Sans"; font.weight: 500
+                                                                     color: isActive ? Theme.bgColor : settingsRoot.textPrimary
+                                                                 }
+
+                                                                 MouseArea {
+                                                                     anchors.fill: parent
+                                                                     cursorShape: Qt.PointingHandCursor
+                                                                     onClicked: {
+                                                                         powerProfileQuery.setProfile(modelData.value)
+                                                                     }
+                                                                 }
+                                                             }
+                                                         }
+                                                     }
+                                                 }
+                                             }
+                                         }
+
+                                         // SECTION 2: Languages & Clock
+                                         Text {
+                                             text: "Date, time and language"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 8
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: dateLangCol.implicitHeight + 32
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: dateLangCol
+                                                 anchors { fill: parent; margins: 16 }
+                                                 spacing: 16
+
+                                                 // 24-hour clock
+                                                 RowLayout {
+                                                     Layout.fillWidth: true
+                                                     ColumnLayout {
+                                                         spacing: 2
+                                                         Text {
+                                                             text: "Use 24-hour clock"
+                                                             font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                             color: settingsRoot.textPrimary
+                                                         }
+                                                         Text {
+                                                             text: "Display format for the system clock"
+                                                             font.pixelSize: 12; font.family: "Google Sans"
+                                                             color: settingsRoot.textSecondary
+                                                         }
+                                                     }
+
+                                                     Item { Layout.fillWidth: true }
+
+                                                     Rectangle {
+                                                         width: 52; height: 30; radius: 15
+                                                         color: ConfigService.values.use24Hour ? settingsRoot.switchOnColor : settingsRoot.switchOffColor
+
+                                                         Rectangle {
+                                                             width: 24; height: 24; radius: 12
+                                                             anchors.verticalCenter: parent.verticalCenter
+                                                             x: ConfigService.values.use24Hour ? parent.width - width - 3 : 3
+                                                             color: settingsRoot.switchKnob
+                                                             Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                                                         }
+
+                                                         MouseArea {
+                                                             anchors.fill: parent
+                                                             cursorShape: Qt.PointingHandCursor
+                                                             onClicked: {
+                                                                 ConfigService.values.use24Hour = !ConfigService.values.use24Hour
+                                                             }
+                                                         }
+                                                     }
+                                                 }
+
+                                                 Rectangle {
+                                                     Layout.fillWidth: true; height: 1
+                                                     color: settingsRoot.dividerColor
+                                                 }
+
+                                                  // Keyboard Layouts
+                                                  RowLayout {
+                                                      Layout.fillWidth: true
+                                                      ColumnLayout {
+                                                          spacing: 2
+                                                          Text {
+                                                              text: "Active keyboard layouts"
+                                                              font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                              color: settingsRoot.textPrimary
+                                                          }
+                                                          Text {
+                                                              text: "Configured layout rule: " + layoutQuery.layouts
+                                                              font.pixelSize: 12; font.family: "Google Sans"
+                                                              color: settingsRoot.textSecondary
+                                                          }
+                                                      }
+                                                      Item { Layout.fillWidth: true }
+                                                      Text {
+                                                          text: "Active layout: " + root.kbLayout
+                                                          font.pixelSize: 13; font.family: "Google Sans"; font.weight: 600
+                                                          color: settingsRoot.activeItem
+                                                      }
+                                                  }
+
+                                                  Rectangle {
+                                                      Layout.fillWidth: true; height: 1
+                                                      color: settingsRoot.dividerColor
+                                                  }
+
+                                                  // Interface Language
+                                                  RowLayout {
+                                                      Layout.fillWidth: true
+                                                      ColumnLayout {
+                                                          spacing: 2
+                                                          Text {
+                                                              text: "Interface language"
+                                                              font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                              color: settingsRoot.textPrimary
+                                                          }
+                                                          Text {
+                                                              text: "Locale: " + localeQuery.rawLocale
+                                                              font.pixelSize: 12; font.family: "Google Sans"
+                                                              color: settingsRoot.textSecondary
+                                                          }
+                                                      }
+                                                      Item { Layout.fillWidth: true }
+                                                      Text {
+                                                          text: localeQuery.localeName
+                                                          font.pixelSize: 13; font.family: "Google Sans"; font.weight: 600
+                                                          color: settingsRoot.activeItem
+                                                      }
+                                                  }
+                                             }
+                                         }
+                                     }
+                                 }
                             }
                         }
                     }

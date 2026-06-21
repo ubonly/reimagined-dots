@@ -706,7 +706,7 @@ ShellRoot {
                                     Text {
                                         id: timeTxt
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: Qt.formatDateTime(clock.date, "HH:mm")
+                                        text: Qt.formatDateTime(clock.date, ConfigService.ready && ConfigService.values.use24Hour ? "HH:mm" : "h:mm AP")
                                         color: qsPopupInst.popupVisible
                                             ? Theme.dockActiveText
                                             : Theme.dockTextStrong

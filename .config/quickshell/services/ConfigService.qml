@@ -65,6 +65,7 @@ Singleton {
             property string wallpaperPath: ""
             property string wallpaperState: ""
             property string matugenScheme: "scheme-tonal-spot"
+            property bool use24Hour: true
         }
     }
 }

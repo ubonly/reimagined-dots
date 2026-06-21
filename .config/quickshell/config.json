@@ -1,12 +1,15 @@
 {
     "dnd": false,
-    "dockIconFillEnabled": false,
+    "dockIconFillEnabled": true,
     "dockOpacity": 0.85,
     "dockStyle": "rounded",
     "dockTransparencyEnabled": false,
     "konachanTags": "",
-    "themeMode": "dark",
+    "matugenScheme": "scheme-neutral",
+    "themeMode": "light",
+    "wallpaperPath": "/home/ubonly/Pictures/Wallpapers/random_konachan.png",
+    "wallpaperState": "1782001142825453593|/home/ubonly/Pictures/Wallpapers/random_konachan.png",
+    "use24Hour": true,
     "wallpaperUpscaleEnabled": false,
-    "wallpaperUpscaleFactor": 2,
-    "matugenScheme": "scheme-tonal-spot"
+    "wallpaperUpscaleFactor": 2
 }
