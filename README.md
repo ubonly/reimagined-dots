@@ -4,21 +4,22 @@ A ChromeOS-inspired Quickshell config for Hyprland on Arch Linux. The repository
 
 ## Installation
 
-### Quick Install
+### Automatic Install (Supports Arch, Fedora, Debian/Ubuntu, NixOS)
 
 ```bash
 git clone https://github.com/ubonly/reimagined-dots.git ~/reimagined-dots
-rsync -a ~/reimagined-dots/.config/quickshell/ ~/.config/quickshell/
+cd ~/reimagined-dots
+./install.sh
 ```
 
-The repository is meant to be copied into place as-is. Add the required Hyprland rules manually if you have not done that already.
+The script will automatically detect your Linux distribution, install the necessary package dependencies, copy all configs (`quickshell`, `matugen`, `hypr`), and set up backups.
 
 ### Manual Setup
 
 If you prefer to install things by hand, you will need:
 
 - `hyprland`
-- `quickshell-git`
+- `quickshell`
 - `ttf-roboto`
 - `inter-font`
 - `ttf-google-sans`
@@ -43,7 +44,7 @@ If you prefer to install things by hand, you will need:
 - `hyprlock`
 - `curl`
 - `zenity`
-- `matugen-bin`
+- `matugen`
 - `swww` or `hyprpaper` (for static wallpaper rendering)
 - `mpvpaper` (optional, for video wallpaper rendering)
 
