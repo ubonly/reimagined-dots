@@ -47,6 +47,37 @@ If you prefer to install things by hand, you will need:
 - `swww` or `hyprpaper` (for static wallpaper rendering)
 - `mpvpaper` (optional, for video wallpaper rendering)
 
+### Other Distributions Compatibility
+
+Almost all dependencies are available across other major Linux distributions. Here is a package name mapping helper:
+
+#### Fedora
+Most core utilities can be installed via `dnf`:
+```bash
+sudo dnf install jq bc python3-pillow NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+```
+* **Quickshell**: Build from source (`cargo install quickshell` or use Copr repo if available).
+* **Matugen**: Install via cargo (`cargo install matugen`) or download from Github releases.
+* **Hyprshot / Cliphist**: Available in Fedora Copr repositories or can be compiled manually.
+
+#### Debian / Ubuntu (Sid/Testing)
+Install core utilities via `apt`:
+```bash
+sudo apt install jq bc python3-pillow network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+```
+* **Quickshell & Matugen**: Build from source (cargo / github releases).
+
+#### NixOS
+Add these package names to your `environment.systemPackages` or Home Manager config:
+* `pkgs.quickshell` (available in nixpkgs-unstable)
+* `pkgs.matugen` (available in nixpkgs-unstable)
+* `pkgs.jq`, `pkgs.bc`, `pkgs.python3Packages.pillow`
+* `pkgs.brightnessctl`, `pkgs.libnotify`, `pkgs.psmisc`, `pkgs.procps`, `pkgs.xdg-utils`
+* `pkgs.grim`, `pkgs.ffmpeg`, `pkgs.wf-recorder`, `pkgs.wl-clipboard`
+* `pkgs.cliphist`, `pkgs.hyprlock`, `pkgs.curl`, `pkgs.zenity`
+* `pkgs.swww` or `pkgs.hyprpaper`
+* Enable bluetooth, networkmanager, and hyprland using their respective NixOS system options.
+
 ## Hyprland Configuration
 
 Add these lines to `~/.config/hypr/hyprland.conf`:
