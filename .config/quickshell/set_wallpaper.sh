@@ -7,6 +7,21 @@ UPSCALE_CACHE_DIR="$HOME/.cache/quicksALE/wallpaper-upscale"
 UPSCALE_CACHE_DIR="$HOME/.cache/quickshell/wallpaper-upscale"
 VIDEO_THUMBNAILS_DIR="$HOME/.cache/quickshell/video-thumbnails"
 
+# Load config values in a single jq call
+UPSCALE_ENABLED="false"
+UPSCALE_FACTOR="2"
+MATUGEN_SCHEME="scheme-tonal-spot"
+THEME_MODE="dark"
+
+if [ -f "$CONFIG_FILE" ]; then
+    eval $(jq -r '
+      "UPSCALE_ENABLED=" + (.wallpaperUpscaleEnabled // "false" | tostring) +
+      "; UPSCALE_FACTOR=" + (.wallpaperUpscaleFactor // "2" | tostring) +
+      "; MATUGEN_SCHEME=" + (.matugenScheme // "scheme-tonal-spot" | tostring) +
+      "; THEME_MODE=" + (.themeMode // "dark" | tostring)
+    ' "$CONFIG_FILE" 2>/dev/null)
+fi
+
 read_config_val() {
     local key="$1"
     local fallback="$2"
@@ -40,8 +55,8 @@ is_video() {
 
 maybe_upscale_wallpaper() {
     local input="$1"
-    local enabled
-    local factor
+    local enabled="${UPSCALE_ENABLED,,}"
+    local factor="$UPSCALE_FACTOR"
     local upscaler=""
 
     # Don't upscale videos
@@ -49,9 +64,6 @@ maybe_upscale_wallpaper() {
         printf '%s\n' "$input"
         return 0
     fi
-
-    enabled=$(read_config_val "wallpaperUpscaleEnabled" "false" | tr '[:upper:]' '[:lower:]')
-    factor=$(read_config_val "wallpaperUpscaleFactor" "2")
 
     if [ "$enabled" != "true" ] || { [ "$factor" != "2" ] && [ "$factor" != "4" ]; }; then
         printf '%s\n' "$input"
@@ -101,12 +113,12 @@ fi
 
 FINAL_WP="$(maybe_upscale_wallpaper "$WP")"
 
-# Save the path
-write_config_val "wallpaperPath" "\"$FINAL_WP\""
-write_config_val "wallpaperState" "\"$(date +%s%N)|$FINAL_WP\""
+# Save the paths in a single jq call
+tmp="${CONFIG_FILE}.tmp.$$"
+jq ".wallpaperPath = \"$FINAL_WP\" | .wallpaperState = \"$(date +%s%N)|$FINAL_WP\"" "$CONFIG_FILE" > "$tmp" && mv "$tmp" "$CONFIG_FILE"
 
 # Get theme mode
-MODE=$(read_config_val "themeMode" "dark")
+MODE="$THEME_MODE"
 if [ "$MODE" != "dark" ] && [ "$MODE" != "light" ]; then
     MODE="dark"
 fi
@@ -176,14 +188,16 @@ else
     fi
 fi
 
-# Run matugen color generation using COLOR_GEN_TARGET
+# Run matugen color generation using COLOR_GEN_TARGET in the background
 if command -v matugen >/dev/null 2>&1; then
-    PALETTE_TYPE=$(read_config_val "matugenScheme" "scheme-tonal-spot")
+    PALETTE_TYPE="$MATUGEN_SCHEME"
     TYPE_ARGS=()
     if [ "$PALETTE_TYPE" != "auto" ] && [ -n "$PALETTE_TYPE" ]; then
         TYPE_ARGS+=("-t" "$PALETTE_TYPE")
     fi
-    matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 --quiet
-    matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
-    python3 "$HOME/.config/quickshell/harmonize_kitty.py"
+    (
+        matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 --quiet
+        matugen image "$COLOR_GEN_TARGET" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
+        python3 "$HOME/.config/quickshell/harmonize_kitty.py"
+    ) &
 fi

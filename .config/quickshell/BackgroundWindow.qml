@@ -112,7 +112,7 @@ PanelWindow {
         property: "scale"
         from: 0.0
         to: root.maxScale
-        duration: 1800
+        duration: 400
         easing.type: Easing.OutCubic
 
         onFinished: {
