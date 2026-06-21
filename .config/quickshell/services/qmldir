@@ -4,3 +4,4 @@ singleton AudioService 1.0 AudioService.qml
 singleton BrightnessService 1.0 BrightnessService.qml
 singleton ConfigService 1.0 ConfigService.qml
 singleton MprisService 1.0 MprisService.qml
+singleton NotificationService 1.0 NotificationService.qml

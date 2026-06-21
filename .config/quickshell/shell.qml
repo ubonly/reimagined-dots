@@ -3,7 +3,6 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Services.SystemTray
-import Quickshell.Services.Notifications
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
@@ -13,7 +12,6 @@ import "services"
 
 ShellRoot {
     id: root
-    // ── Global notification server (must be a single instance) ─────────────
     // ── Global Configuration Service ───────────────────────────────────────
     property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
     property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
@@ -62,29 +60,6 @@ ShellRoot {
             }
         }
     }
-
-
-    NotificationServer {
-        id: notifServer
-        actionsSupported:     false
-        bodySupported:        true
-        bodyMarkupSupported:  false
-        bodyImagesSupported:  false
-        imageSupported:       true
-        persistenceSupported: true
-        keepOnReload:         true
-
-        onNotification: function(notif) {
-            console.log("[notif] received:", notif.appName, "|", notif.summary, "|", notif.body)
-            notif.tracked = true
-            notif.dismissed = false
-            // Mirror into the notification center history (so it persists past the toast)
-            for (var i = 0; i < _notifCenters.length; i++) {
-                if (_notifCenters[i]) _notifCenters[i].pushNotification(notif)
-            }
-        }
-    }
-
     property var _notifCenters: []
     function toggleNotificationCenter() {
         for (var i = 0; i < _notifCenters.length; i++) {
@@ -280,7 +255,6 @@ ShellRoot {
             NotificationsPopup {
                 id: notifPopupInst
                 screenRef: modelData
-                notificationsModel: notifServer.trackedNotifications.values
             }
 
             // Notification Center (bottom-right popup)
@@ -589,7 +563,7 @@ ShellRoot {
 
                             Item {
                                 id: notifSection
-                                visible: notifCenterInst.history.length > 0
+                                visible: NotificationService.history.length > 0
                                 width: 42; height: 38
 
                                 Rectangle {
@@ -603,7 +577,9 @@ ShellRoot {
 
                                 Text {
                                     anchors.centerIn: parent
-                                    text: notifCenterInst.history.length
+                                    text: NotificationService.unread > 0
+                                        ? NotificationService.unread
+                                        : NotificationService.history.length
                                     color: notifCenterInst.isOpen
                                         ? Theme.dockActiveText
                                         : Theme.dockTextStrong
@@ -619,7 +595,7 @@ ShellRoot {
                             }
 
                             Item {
-                                visible: notifCenterInst.history.length > 0
+                                visible: NotificationService.history.length > 0
                                 width: 2; height: 38
                                 Rectangle {
                                     width: 2; height: 20

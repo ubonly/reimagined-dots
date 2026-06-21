@@ -3,11 +3,11 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
+import "services"
 
 PanelWindow {
     id: root
     property var screenRef
-    property var notificationsModel: null   // injected from ShellRoot
     screen: screenRef
 
     anchors { top: true; right: true }
@@ -21,10 +21,6 @@ PanelWindow {
     WlrLayershell.namespace: "quickshell-notifications"
     color: "transparent"
 
-    onNotificationsModelChanged: console.log("[notif-popup] model set, length=",
-        notificationsModel ? notificationsModel.length : -1)
-
-    // list of notification cards
     ListView {
         id: notifList
         anchors.fill: parent
@@ -33,11 +29,14 @@ PanelWindow {
         interactive: true
         verticalLayoutDirection: ListView.TopToBottom
 
-        model: root.notificationsModel
+        model: NotificationService.popupNotifications
 
         delegate: NotificationCard {
             width: notifList.width
             notification: modelData
+            isPopup: true
+            showActions: true
+            showDismiss: true
         }
 
         // fade + slide-in for new items
