@@ -162,6 +162,7 @@ PanelWindow {
     property string searchText: ""
     property int activeIndex: 0
     property string _buf: ""
+    readonly property int maxSearchResults: 12
     readonly property var searchAliases: ({
         "vsc": ["visual studio code", "code-oss", "vscode", "code"],
         "vscode": ["visual studio code", "code-oss", "code"],
@@ -289,9 +290,9 @@ PanelWindow {
                     best = Math.min(best, qi === 0 ? 28 : 32)
                 else if (normalized.indexOf(q) >= 0 || compact.indexOf(cq) >= 0)
                     best = Math.min(best, qi === 0 ? 40 : 44)
-                else {
+                else if (cq.length >= 4) {
                     var fuzzy = launcher.fuzzySubsequenceScore(cq, compact)
-                    if (fuzzy >= 0)
+                    if (fuzzy >= 0 && fuzzy < 82)
                         best = Math.min(best, fuzzy + (qi * 8))
                 }
             }
@@ -319,7 +320,8 @@ PanelWindow {
         })
 
         var out = []
-        for (var j = 0; j < ranked.length; j++)
+        var limit = Math.min(ranked.length, launcher.maxSearchResults)
+        for (var j = 0; j < limit; j++)
             out.push(ranked[j].app)
         filteredApps = out
     }
