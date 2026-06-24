@@ -169,20 +169,9 @@ PanelWindow {
         "code": ["visual studio code", "code-oss", "vscode"],
         "ff": ["firefox"],
         "tg": ["telegram"],
-        "тг": ["telegram"],
-        "телега": ["telegram"],
         "dc": ["discord"],
         "disc": ["discord"],
-        "дс": ["discord"],
-        "дис": ["discord"],
-        "дискорд": ["discord"],
-        "вск": ["visual studio code", "code-oss", "vscode", "code"],
-        "вскод": ["visual studio code", "code-oss", "vscode", "code"],
-        "вс код": ["visual studio code", "code-oss", "vscode", "code"],
-        "код": ["visual studio code", "code-oss", "vscode", "code"],
         "term": ["terminal", "kitty", "foot", "konsole"],
-        "терм": ["terminal", "kitty", "foot", "konsole"],
-        "терминал": ["terminal", "kitty", "foot", "konsole"],
         "fm": ["file manager", "files", "nautilus", "dolphin", "thunar"]
     })
 
@@ -219,6 +208,70 @@ PanelWindow {
 
     function compactSearchText(value) {
         return launcher.normalizeSearchText(value).replace(/\s+/g, "")
+    }
+
+    function addUnique(list, value) {
+        var normalized = launcher.normalizeSearchText(value)
+        if (normalized.length > 0 && list.indexOf(normalized) < 0)
+            list.push(normalized)
+    }
+
+    function ruKeyboardToEn(value) {
+        var map = {
+            "й": "q", "ц": "w", "у": "e", "к": "r", "е": "t", "н": "y", "г": "u", "ш": "i", "щ": "o", "з": "p", "х": "[", "ъ": "]",
+            "ф": "a", "ы": "s", "в": "d", "а": "f", "п": "g", "р": "h", "о": "j", "л": "k", "д": "l", "ж": ";", "э": "'",
+            "я": "z", "ч": "x", "с": "c", "м": "v", "и": "b", "т": "n", "ь": "m", "б": ",", "ю": "."
+        }
+        var out = ""
+        var lower = (value || "").toLowerCase()
+        for (var i = 0; i < lower.length; i++)
+            out += map[lower[i]] || lower[i]
+        return out
+    }
+
+    function transliterateRuToLatin(value) {
+        var map = {
+            "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh", "з": "z", "и": "i", "й": "y",
+            "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f",
+            "х": "h", "ц": "c", "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya"
+        }
+        var out = ""
+        var lower = (value || "").toLowerCase()
+        for (var i = 0; i < lower.length; i++)
+            out += map[lower[i]] !== undefined ? map[lower[i]] : lower[i]
+        return out
+    }
+
+    function phoneticVariants(value) {
+        var variants = []
+        launcher.addUnique(variants, value)
+
+        var compact = launcher.compactSearchText(value)
+        launcher.addUnique(variants, compact)
+
+        if (compact.indexOf("k") >= 0)
+            launcher.addUnique(variants, compact.replace(/k/g, "c"))
+        if (compact.indexOf("ds") >= 0)
+            launcher.addUnique(variants, compact.replace(/ds/g, "dc"))
+        if (compact.indexOf("ks") >= 0)
+            launcher.addUnique(variants, compact.replace(/ks/g, "x"))
+        if (compact.indexOf("y") >= 0)
+            launcher.addUnique(variants, compact.replace(/y/g, "i"))
+
+        return variants
+    }
+
+    function queryVariants(rawQuery) {
+        var variants = []
+        launcher.addUnique(variants, rawQuery)
+        launcher.addUnique(variants, launcher.ruKeyboardToEn(rawQuery))
+
+        var translit = launcher.transliterateRuToLatin(rawQuery)
+        var phonetic = launcher.phoneticVariants(translit)
+        for (var i = 0; i < phonetic.length; i++)
+            launcher.addUnique(variants, phonetic[i])
+
+        return variants
     }
 
     function appSearchParts(app) {
@@ -269,16 +322,18 @@ PanelWindow {
     }
 
     function scoreApp(app, rawQuery) {
-        var query = launcher.normalizeSearchText(rawQuery)
-        var compactQuery = launcher.compactSearchText(rawQuery)
-        if (query.length === 0)
+        var variants = launcher.queryVariants(rawQuery)
+        if (variants.length === 0)
             return 0
 
-        var expandedQueries = [query]
-        var directAliases = launcher.searchAliases[compactQuery] || launcher.searchAliases[query]
-        if (directAliases) {
-            for (var a = 0; a < directAliases.length; a++)
-                expandedQueries.push(launcher.normalizeSearchText(directAliases[a]))
+        var expandedQueries = variants.slice()
+        for (var vi = 0; vi < variants.length; vi++) {
+            var variant = variants[vi]
+            var directAliases = launcher.searchAliases[launcher.compactSearchText(variant)] || launcher.searchAliases[variant]
+            if (directAliases) {
+                for (var a = 0; a < directAliases.length; a++)
+                    launcher.addUnique(expandedQueries, directAliases[a])
+            }
         }
 
         var best = 9999
