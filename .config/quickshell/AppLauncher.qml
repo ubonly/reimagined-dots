@@ -169,9 +169,20 @@ PanelWindow {
         "code": ["visual studio code", "code-oss", "vscode"],
         "ff": ["firefox"],
         "tg": ["telegram"],
+        "тг": ["telegram"],
+        "телега": ["telegram"],
         "dc": ["discord"],
         "disc": ["discord"],
+        "дс": ["discord"],
+        "дис": ["discord"],
+        "дискорд": ["discord"],
+        "вск": ["visual studio code", "code-oss", "vscode", "code"],
+        "вскод": ["visual studio code", "code-oss", "vscode", "code"],
+        "вс код": ["visual studio code", "code-oss", "vscode", "code"],
+        "код": ["visual studio code", "code-oss", "vscode", "code"],
         "term": ["terminal", "kitty", "foot", "konsole"],
+        "терм": ["terminal", "kitty", "foot", "konsole"],
+        "терминал": ["terminal", "kitty", "foot", "konsole"],
         "fm": ["file manager", "files", "nautilus", "dolphin", "thunar"]
     })
 
