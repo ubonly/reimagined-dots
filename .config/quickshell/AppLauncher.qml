@@ -162,6 +162,17 @@ PanelWindow {
     property string searchText: ""
     property int activeIndex: 0
     property string _buf: ""
+    readonly property var searchAliases: ({
+        "vsc": ["visual studio code", "code-oss", "vscode", "code"],
+        "vscode": ["visual studio code", "code-oss", "code"],
+        "code": ["visual studio code", "code-oss", "vscode"],
+        "ff": ["firefox"],
+        "tg": ["telegram"],
+        "dc": ["discord"],
+        "disc": ["discord"],
+        "term": ["terminal", "kitty", "foot", "konsole"],
+        "fm": ["file manager", "files", "nautilus", "dolphin", "thunar"]
+    })
 
     Process {
         id: listProc
@@ -190,18 +201,127 @@ PanelWindow {
         recentReadProc.running = true
     }
 
+    function normalizeSearchText(value) {
+        return (value || "").toLowerCase().replace(/[^a-z0-9а-яё]+/g, " ").trim()
+    }
+
+    function compactSearchText(value) {
+        return launcher.normalizeSearchText(value).replace(/\s+/g, "")
+    }
+
+    function appSearchParts(app) {
+        var execBase = (app.exec || "").split(" ")[0].split("/").pop()
+        return [
+            app.name || "",
+            app.genericName || "",
+            app.comment || "",
+            app.keywords || "",
+            app.categories || "",
+            app.icon || "",
+            app.desktopId || "",
+            execBase || ""
+        ]
+    }
+
+    function acronymFor(text) {
+        var words = launcher.normalizeSearchText(text).split(/\s+/)
+        var out = ""
+        for (var i = 0; i < words.length; i++) {
+            if (words[i].length > 0)
+                out += words[i][0]
+        }
+        return out
+    }
+
+    function fuzzySubsequenceScore(query, target) {
+        if (query.length === 0)
+            return 0
+
+        var qi = 0
+        var first = -1
+        var last = -1
+        for (var i = 0; i < target.length && qi < query.length; i++) {
+            if (target[i] === query[qi]) {
+                if (first < 0)
+                    first = i
+                last = i
+                qi++
+            }
+        }
+
+        if (qi !== query.length)
+            return -1
+
+        var span = last - first + 1
+        return 70 + span - query.length + first
+    }
+
+    function scoreApp(app, rawQuery) {
+        var query = launcher.normalizeSearchText(rawQuery)
+        var compactQuery = launcher.compactSearchText(rawQuery)
+        if (query.length === 0)
+            return 0
+
+        var expandedQueries = [query]
+        var directAliases = launcher.searchAliases[compactQuery] || launcher.searchAliases[query]
+        if (directAliases) {
+            for (var a = 0; a < directAliases.length; a++)
+                expandedQueries.push(launcher.normalizeSearchText(directAliases[a]))
+        }
+
+        var best = 9999
+        var parts = launcher.appSearchParts(app)
+        for (var qi = 0; qi < expandedQueries.length; qi++) {
+            var q = expandedQueries[qi]
+            var cq = launcher.compactSearchText(q)
+            for (var i = 0; i < parts.length; i++) {
+                var normalized = launcher.normalizeSearchText(parts[i])
+                var compact = launcher.compactSearchText(parts[i])
+                var acronym = launcher.acronymFor(parts[i])
+
+                if (normalized === q || compact === cq)
+                    best = Math.min(best, qi === 0 ? 0 : 12)
+                else if (normalized.indexOf(q) === 0 || compact.indexOf(cq) === 0)
+                    best = Math.min(best, qi === 0 ? 10 : 18)
+                else if (acronym === cq)
+                    best = Math.min(best, qi === 0 ? 20 : 24)
+                else if (acronym.indexOf(cq) === 0)
+                    best = Math.min(best, qi === 0 ? 28 : 32)
+                else if (normalized.indexOf(q) >= 0 || compact.indexOf(cq) >= 0)
+                    best = Math.min(best, qi === 0 ? 40 : 44)
+                else {
+                    var fuzzy = launcher.fuzzySubsequenceScore(cq, compact)
+                    if (fuzzy >= 0)
+                        best = Math.min(best, fuzzy + (qi * 8))
+                }
+            }
+        }
+        return best
+    }
+
     function filterApps() {
         if (searchText === "") {
             filteredApps = allApps
-        } else {
-            var q = searchText.toLowerCase()
-            var r = []
-            for (var i = 0; i < allApps.length; i++) {
-                if (allApps[i].name.toLowerCase().indexOf(q) >= 0)
-                    r.push(allApps[i])
-            }
-            filteredApps = r
+            return
         }
+
+        var ranked = []
+        for (var i = 0; i < allApps.length; i++) {
+            var score = launcher.scoreApp(allApps[i], searchText)
+            if (score < 9999)
+                ranked.push({ app: allApps[i], score: score })
+        }
+
+        ranked.sort(function(a, b) {
+            if (a.score !== b.score)
+                return a.score - b.score
+            return a.app.name.localeCompare(b.app.name)
+        })
+
+        var out = []
+        for (var j = 0; j < ranked.length; j++)
+            out.push(ranked[j].app)
+        filteredApps = out
     }
 
     function toggle() {

@@ -104,6 +104,14 @@ def parse_desktop_file(filepath):
                     return None
                 elif key == 'Name' and 'name' not in app:
                     app['name'] = val
+                elif key == 'GenericName' and 'genericName' not in app:
+                    app['genericName'] = val
+                elif key == 'Comment' and 'comment' not in app:
+                    app['comment'] = val
+                elif key == 'Keywords' and 'keywords' not in app:
+                    app['keywords'] = val.replace(';', ' ')
+                elif key == 'Categories' and 'categories' not in app:
+                    app['categories'] = val.replace(';', ' ')
                 elif key == 'Icon' and 'icon' not in app:
                     app['icon'] = val
                 elif key == 'Exec' and 'exec' not in app:
@@ -119,6 +127,7 @@ def parse_desktop_file(filepath):
             else:
                 app['iconPath'] = ''
             app['icon'] = icon_name
+            app['desktopId'] = os.path.basename(filepath)
             return app
     except Exception:
         pass
