@@ -96,6 +96,7 @@ ShellRoot {
             onSettingsVisibleChanged: {
                 if (!settingsVisible) settingsInst.settingsVisible = false
             }
+            onOpenWallpaperBrowser: wallpaperSelector.openBrowser("")
         }
     }
 
@@ -151,6 +152,9 @@ ShellRoot {
         target: "WallpaperSelector"
         function toggle() {
             wallpaperSelector.selectorVisible = !wallpaperSelector.selectorVisible;
+        }
+        function open() {
+            wallpaperSelector.openBrowser("");
         }
     }
 

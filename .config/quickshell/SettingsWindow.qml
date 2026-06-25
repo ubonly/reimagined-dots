@@ -15,6 +15,7 @@ FloatingWindow {
     id: settingsRoot
     property var  screenRef
     property bool settingsVisible: false
+    signal openWallpaperBrowser()
 
     title: "Settings"
     implicitWidth: 920
@@ -683,12 +684,10 @@ FloatingWindow {
                                                 SettingsRow {
                                                     iconSource: "assets/icons/wallpaper.svg"
                                                     title: "Pick wallpaper image"
-                                                    subtitle: "Select a custom image from your system"
+                                                    subtitle: "Browse local wallpaper collections"
                                                     hasChevron: true
                                                     showDivider: true
-                                                    onClicked: {
-                                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/set_wallpaper.sh"])
-                                                    }
+                                                    onClicked: settingsRoot.openWallpaperBrowser()
                                                 }
                                                 RowLayout {
                                                     Layout.fillWidth: true

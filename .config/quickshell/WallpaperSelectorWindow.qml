@@ -11,7 +11,17 @@ import "services"
 
 PanelWindow {
     id: wallpaperRoot
+
     property bool selectorVisible: false
+    property string homePath: "/home/ubonly"
+    property string picturesPath: homePath + "/Pictures"
+    property string downloadedPath: picturesPath + "/Wallpapers"
+    property string savedPath: picturesPath + "/Saved_Wallpapers"
+    property string selectedPath: ""
+    property bool applying: false
+
+    readonly property string activeWallpaperPath: ConfigService.ready ? ConfigService.values.wallpaperPath : ""
+    readonly property string startPath: downloadedPath
 
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.namespace: "quickshell:wallpaperSelector"
@@ -19,7 +29,6 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
     color: "transparent"
 
-    // Attach to the top center
     anchors {
         top: true
         left: true
@@ -27,69 +36,136 @@ PanelWindow {
     }
     margins.top: 8
 
-    implicitHeight: 620
-
+    implicitHeight: 660
     visible: selectorVisible
 
-    // ── Folder model (shows both dirs and images) ──────────────────────────
+    onSelectorVisibleChanged: {
+        if (selectorVisible && selectedPath === "") {
+            selectedPath = activeWallpaperPath
+        }
+    }
+
+    component SvgIcon: Item {
+        id: iconRoot
+        property string iconSource: ""
+        property color iconColor: Theme.colorOnSurface
+        property int iconSize: 20
+
+        width: iconSize
+        height: iconSize
+
+        Image {
+            id: svgImage
+            anchors.fill: parent
+            source: iconRoot.iconSource
+            sourceSize: Qt.size(parent.width, parent.height)
+            visible: false
+        }
+
+        ColorOverlay {
+            anchors.fill: svgImage
+            source: svgImage
+            color: iconRoot.iconColor
+        }
+    }
+
     FolderListModel {
         id: folderModel
-        folder: "file:///home/ubonly/Pictures/Saved_Wallpapers"
+        folder: "file://" + wallpaperRoot.startPath
         showDirs: true
+        showFiles: true
         showDotAndDotDot: false
         showOnlyReadable: true
         sortField: FolderListModel.Name
-        // No nameFilters here — filtering in delegate so dirs are still shown
+        nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.avif", "*.bmp", "*.gif"]
+    }
+
+    Process {
+        id: applyProc
+        command: ["bash", ConfigService.configDir + "/set_wallpaper.sh", wallpaperRoot.selectedPath]
+        running: false
+        onRunningChanged: {
+            if (!running && wallpaperRoot.applying) {
+                wallpaperRoot.applying = false
+                wallpaperRoot.selectorVisible = false
+            }
+        }
     }
 
     function isImage(name) {
-        let ext = name.split(".").pop().toLowerCase();
-        return ["png", "jpg", "jpeg", "webp", "avif", "bmp", "gif"].indexOf(ext) !== -1;
+        let ext = name.split(".").pop().toLowerCase()
+        return ["png", "jpg", "jpeg", "webp", "avif", "bmp", "gif"].indexOf(ext) !== -1
     }
 
-    // ── Navigate into directory ────────────────────────────────────────────
-    function navigateTo(path) {
-        folderModel.folder = "file://" + path;
+    function setFolder(path) {
+        if (!path || path.length === 0)
+            return
+        folderModel.folder = "file://" + path
     }
-    function navigateUp() {
-        let current = folderModel.folder.toString().replace("file://", "");
-        let parent = current.replace(/\/[^\/]+\/?$/, "");
-        if (parent.length === 0) parent = "/";
-        folderModel.folder = "file://" + parent;
-    }
+
     function currentPath() {
-        return folderModel.folder.toString().replace("file://", "");
+        return folderModel.folder.toString().replace("file://", "")
     }
 
-    // ── Quick‐dirs for sidebar ─────────────────────────────────────────────
+    function currentFolderName() {
+        let parts = currentPath().split("/")
+        return parts.length > 0 ? parts[parts.length - 1] : currentPath()
+    }
+
+    function navigateTo(path) {
+        setFolder(path)
+    }
+
+    function navigateUp() {
+        let current = currentPath()
+        let parent = current.replace(/\/[^\/]+\/?$/, "")
+        if (parent.length === 0)
+            parent = "/"
+        setFolder(parent)
+    }
+
+    function selectPath(path) {
+        selectedPath = path
+    }
+
+    function openBrowser(path) {
+        setFolder(path && path.length > 0 ? path : startPath)
+        selectedPath = activeWallpaperPath
+        selectorVisible = true
+    }
+
+    function applySelected() {
+        if (selectedPath === "" || applying)
+            return
+        applying = true
+        applyProc.command = ["bash", ConfigService.configDir + "/set_wallpaper.sh", selectedPath]
+        applyProc.running = true
+    }
+
     property var quickDirs: [
-        { icon: "🏠", name: "Home",       path: "/home/ubonly" },
-        { icon: "🖼️", name: "Pictures",   path: "/home/ubonly/Pictures" },
-        { icon: "📥", name: "Downloads",  path: "/home/ubonly/Downloads" },
-        { icon: "🎨", name: "Wallpapers", path: "/home/ubonly/Pictures/Saved_Wallpapers" },
+        { icon: "assets/icons/image-fill.svg", name: "Downloaded", path: downloadedPath },
+        { icon: "assets/icons/wallpaper.svg", name: "Saved", path: savedPath },
+        { icon: "assets/icons/wallpaper.svg", name: "Pictures", path: picturesPath },
+        { icon: "assets/icons/apps.svg", name: "Home", path: homePath }
     ]
 
-    // ─── CLICK OUTSIDE TO CLOSE ───────────────────────────────────────────
     MouseArea {
         z: 0
         anchors.fill: parent
         onClicked: wallpaperRoot.selectorVisible = false
     }
 
-    // ─── MAIN CONTENT ─────────────────────────────────────────────────────
     Rectangle {
         id: mainBg
         z: 1
         anchors {
             fill: parent
-            leftMargin: 200
-            rightMargin: 200
-            topMargin: 0
-            bottomMargin: 0
+            leftMargin: 180
+            rightMargin: 180
         }
+        radius: 24
         color: Theme.surface
-        radius: 20
-        border.color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.12)
+        border.color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.14 : 0.10)
         border.width: 1
         clip: true
 
@@ -97,62 +173,67 @@ PanelWindow {
             anchors.fill: parent
             spacing: 0
 
-            // ── LEFT SIDEBAR: Quick dirs ──────────────────────────────────
             Rectangle {
                 Layout.fillHeight: true
-                Layout.preferredWidth: 170
-                Layout.margins: 6
-                radius: 14
-                color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.04)
+                Layout.preferredWidth: 190
+                color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.04 : 0.025)
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 8
-                    spacing: 4
+                    anchors.margins: 16
+                    spacing: 8
 
                     Text {
-                        text: "Pick a wallpaper"
-                        font { pixelSize: 14; family: "Google Sans"; weight: Font.Medium }
+                        text: "Wallpaper"
+                        font.pixelSize: 18
+                        font.family: "Google Sans"
+                        font.weight: Font.DemiBold
                         color: Theme.colorOnSurface
-                        Layout.leftMargin: 8
-                        Layout.topMargin: 8
-                        Layout.bottomMargin: 4
+                        Layout.bottomMargin: 8
                     }
 
                     Repeater {
                         model: wallpaperRoot.quickDirs
+
                         delegate: Rectangle {
+                            id: quickDir
+                            property bool selected: wallpaperRoot.currentPath() === modelData.path
+
                             Layout.fillWidth: true
-                            height: 36
-                            radius: 18
-                            color: wallpaperRoot.currentPath() === modelData.path
-                                   ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                                   : mouseAreaSidebar.containsMouse
-                                     ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.06)
-                                     : "transparent"
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            height: 44
+                            radius: 22
+                            color: selected
+                                ? Theme.primaryContainer
+                                : quickDirMouse.containsMouse
+                                    ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.08 : 0.07)
+                                    : "transparent"
+                            Behavior on color { ColorAnimation { duration: 140 } }
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12
+                                anchors.leftMargin: 14
                                 anchors.rightMargin: 12
-                                spacing: 8
-                                Text {
-                                    text: modelData.icon
-                                    font.pixelSize: 16
+                                spacing: 10
+
+                                SvgIcon {
+                                    iconSource: modelData.icon
+                                    iconSize: 20
+                                    iconColor: quickDir.selected ? Theme.colorOnPrimaryContainer : Theme.colorOnSurface
                                 }
+
                                 Text {
-                                    text: modelData.name
-                                    font { pixelSize: 13; family: "Google Sans" }
-                                    color: wallpaperRoot.currentPath() === modelData.path
-                                           ? Theme.primary
-                                           : Theme.colorOnSurface
                                     Layout.fillWidth: true
+                                    text: modelData.name
+                                    font.pixelSize: 13
+                                    font.family: "Google Sans"
+                                    font.weight: Font.Medium
+                                    color: quickDir.selected ? Theme.colorOnPrimaryContainer : Theme.colorOnSurface
                                     elide: Text.ElideRight
                                 }
                             }
+
                             MouseArea {
-                                id: mouseAreaSidebar
+                                id: quickDirMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
@@ -160,43 +241,54 @@ PanelWindow {
                             }
                         }
                     }
+
                     Item { Layout.fillHeight: true }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Images are applied through the existing wallpaper pipeline, so Matugen and upscale settings stay active."
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: 11
+                        font.family: "Google Sans"
+                        color: Theme.colorOnSurfaceVariant
+                    }
                 }
             }
 
-            // ── RIGHT PANEL: Address bar + Grid ──────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 0
 
-                // ── Address bar ─────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44
-                    Layout.margins: 6
-                    Layout.bottomMargin: 0
-                    radius: 12
-                    color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.04)
+                    Layout.preferredHeight: 64
+                    color: "transparent"
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
-                        spacing: 4
+                        anchors.leftMargin: 18
+                        anchors.rightMargin: 12
+                        spacing: 10
 
-                        // Back (up) button
                         Rectangle {
-                            width: 30; height: 30; radius: 15
-                            color: upBtnMa.containsMouse ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08) : "transparent"
-                            Text {
+                            width: 36
+                            height: 36
+                            radius: 18
+                            color: upMouse.containsMouse
+                                ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.10)
+                                : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.06)
+
+                            SvgIcon {
                                 anchors.centerIn: parent
-                                text: "⬆"
-                                font.pixelSize: 14
-                                color: Theme.colorOnSurface
+                                iconSource: "assets/icons/arrow-back.svg"
+                                iconSize: 18
+                                iconColor: Theme.colorOnSurface
+                                rotation: 90
                             }
+
                             MouseArea {
-                                id: upBtnMa
+                                id: upMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
@@ -204,28 +296,44 @@ PanelWindow {
                             }
                         }
 
-                        // Breadcrumb path
-                        Text {
+                        ColumnLayout {
                             Layout.fillWidth: true
-                            text: wallpaperRoot.currentPath()
-                            font { pixelSize: 13; family: "Google Sans" }
-                            color: Theme.colorOnSurfaceVariant
-                            elide: Text.ElideMiddle
-                            verticalAlignment: Text.AlignVCenter
+                            spacing: 1
+
+                            Text {
+                                text: wallpaperRoot.currentFolderName()
+                                font.pixelSize: 15
+                                font.family: "Google Sans"
+                                font.weight: Font.DemiBold
+                                color: Theme.colorOnSurface
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: wallpaperRoot.currentPath()
+                                font.pixelSize: 11
+                                font.family: "Google Sans"
+                                color: Theme.colorOnSurfaceVariant
+                                elide: Text.ElideMiddle
+                            }
                         }
 
-                        // Close button
                         Rectangle {
-                            width: 30; height: 30; radius: 15
-                            color: closeBtnMa.containsMouse ? Qt.rgba(1, 0.3, 0.3, 0.15) : "transparent"
-                            Text {
+                            width: 36
+                            height: 36
+                            radius: 18
+                            color: closeMouse.containsMouse ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.10) : "transparent"
+
+                            SvgIcon {
                                 anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 14
-                                color: Theme.colorOnSurface
+                                iconSource: "assets/icons/close.svg"
+                                iconSize: 18
+                                iconColor: Theme.colorOnSurface
                             }
+
                             MouseArea {
-                                id: closeBtnMa
+                                id: closeMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
@@ -235,116 +343,139 @@ PanelWindow {
                     }
                 }
 
-                // ── Image / Folder Grid ─────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Theme.dividerColor
+                }
+
                 GridView {
                     id: grid
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.margins: 6
+                    Layout.margins: 14
                     clip: true
-                    cellWidth: (grid.width) / 4
-                    cellHeight: cellWidth * 0.75
-
+                    cellWidth: Math.max(180, Math.floor(grid.width / Math.max(1, Math.floor(grid.width / 210))))
+                    cellHeight: Math.round(cellWidth * 0.62)
                     model: folderModel
+                    boundsBehavior: Flickable.StopAtBounds
 
                     delegate: Item {
                         id: delegateItem
                         width: grid.cellWidth
+                        height: grid.cellHeight
 
-                        // Expose model properties at delegate level
                         property bool isDir: model.fileIsDir
                         property string itemFileName: model.fileName
                         property string itemFilePath: model.filePath
                         property bool itemIsImage: !model.fileIsDir && wallpaperRoot.isImage(model.fileName)
+                        property bool selected: wallpaperRoot.selectedPath === itemFilePath
+                        property bool active: wallpaperRoot.activeWallpaperPath === itemFilePath
                         property url itemFileURL: itemIsImage ? ("file://" + model.filePath) : ""
 
-                        // Show only dirs and image files; hide other files
-                        visible: isDir || itemIsImage
-                        height: grid.cellHeight
-
                         Rectangle {
-                            id: cellBg
                             anchors.fill: parent
-                            anchors.margins: 5
-                            radius: 12
-                            color: cellMa.containsMouse
-                                   ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
-                                   : Theme.surfaceVariant
-                            border.color: cellMa.containsMouse
-                                          ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
-                                          : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.06)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            Behavior on border.color { ColorAnimation { duration: 120 } }
+                            anchors.margins: 6
+                            radius: 16
+                            color: delegateItem.selected
+                                ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.18 : 0.24)
+                                : cellMouse.containsMouse
+                                    ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.07 : 0.08)
+                                    : Theme.surfaceVariant
+                            border.width: delegateItem.selected || delegateItem.active ? 2 : 1
+                            border.color: delegateItem.selected
+                                ? Theme.primary
+                                : delegateItem.active
+                                    ? Theme.secondary
+                                    : Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08)
                             clip: true
+                            Behavior on color { ColorAnimation { duration: 130 } }
+                            Behavior on border.color { ColorAnimation { duration: 130 } }
 
-                            // ── Folder icon (visible when isDir) ──────────
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 4
-                                visible: delegateItem.isDir
-                                Text {
-                                    text: "📁"
-                                    font.pixelSize: 40
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                                Text {
-                                    text: delegateItem.itemFileName
-                                    font { pixelSize: 12; family: "Google Sans" }
-                                    color: Theme.colorOnSurface
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.maximumWidth: grid.cellWidth - 30
-                                    elide: Text.ElideRight
-                                    horizontalAlignment: Text.AlignHCenter
-                                }
-                            }
-
-                            // ── Image preview (visible when NOT isDir) ────
                             Image {
                                 anchors.fill: parent
+                                anchors.margins: delegateItem.itemIsImage ? 0 : 20
                                 visible: delegateItem.itemIsImage
                                 source: delegateItem.itemFileURL
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
-                                cache: false
-                                sourceSize: Qt.size(480, 360)
-                                onStatusChanged: {
-                                    if (status === Image.Error) {
-                                        console.log("[WP] Failed to load:", source);
+                                cache: true
+                                sourceSize: Qt.size(360, 220)
+                            }
+
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                width: parent.width - 24
+                                visible: delegateItem.isDir
+                                spacing: 8
+
+                                SvgIcon {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    iconSource: "assets/icons/wallpaper.svg"
+                                    iconSize: 38
+                                    iconColor: Theme.colorOnSurfaceVariant
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: delegateItem.itemFileName
+                                    horizontalAlignment: Text.AlignHCenter
+                                    elide: Text.ElideRight
+                                    font.pixelSize: 12
+                                    font.family: "Google Sans"
+                                    color: Theme.colorOnSurface
+                                }
+                            }
+
+                            Rectangle {
+                                visible: delegateItem.itemIsImage
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                height: 34
+                                color: Qt.rgba(0, 0, 0, 0.48)
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 10
+                                    spacing: 6
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: delegateItem.itemFileName
+                                        font.pixelSize: 11
+                                        font.family: "Google Sans"
+                                        color: "white"
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Rectangle {
+                                        visible: delegateItem.active
+                                        width: 8
+                                        height: 8
+                                        radius: 4
+                                        color: Theme.secondary
                                     }
                                 }
                             }
 
-                            // Filename label at bottom (for images)
-                            Rectangle {
-                                visible: !delegateItem.isDir
-                                anchors.bottom: parent.bottom
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                height: 24
-                                color: Qt.rgba(0, 0, 0, 0.55)
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: delegateItem.itemFileName
-                                    font { pixelSize: 11; family: "Google Sans" }
-                                    color: "white"
-                                    elide: Text.ElideRight
-                                    width: parent.width - 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                }
-                            }
-
                             MouseArea {
-                                id: cellMa
+                                id: cellMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
                                     if (delegateItem.isDir) {
-                                        wallpaperRoot.navigateTo(delegateItem.itemFilePath);
-                                    } else {
-                                        Quickshell.execDetached(["bash", ConfigService.configDir + "/set_wallpaper.sh", delegateItem.itemFilePath]);
-                                        wallpaperRoot.selectorVisible = false;
+                                        wallpaperRoot.navigateTo(delegateItem.itemFilePath)
+                                    } else if (delegateItem.itemIsImage) {
+                                        wallpaperRoot.selectPath(delegateItem.itemFilePath)
+                                    }
+                                }
+                                onDoubleClicked: {
+                                    if (delegateItem.itemIsImage) {
+                                        wallpaperRoot.selectPath(delegateItem.itemFilePath)
+                                        wallpaperRoot.applySelected()
                                     }
                                 }
                             }
@@ -353,19 +484,137 @@ PanelWindow {
 
                     ScrollBar.vertical: ScrollBar {
                         active: true
-                        width: 6
+                        width: 8
                         contentItem: Rectangle {
-                            implicitWidth: 6
-                            radius: 3
-                            color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.3)
+                            implicitWidth: 8
+                            radius: 4
+                            color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.28)
                         }
                     }
+                }
+            }
+
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 260
+                color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.035 : 0.025)
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 12
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 150
+                        radius: 18
+                        color: Theme.surfaceVariant
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.08)
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: wallpaperRoot.selectedPath !== "" ? ("file://" + wallpaperRoot.selectedPath) : ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: false
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: wallpaperRoot.selectedPath === ""
+                            text: "Select wallpaper"
+                            font.pixelSize: 13
+                            font.family: "Google Sans"
+                            color: Theme.colorOnSurfaceVariant
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: wallpaperRoot.selectedPath !== "" ? wallpaperRoot.selectedPath.split("/").pop() : "No wallpaper selected"
+                        font.pixelSize: 14
+                        font.family: "Google Sans"
+                        font.weight: Font.Medium
+                        color: Theme.colorOnSurface
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: wallpaperRoot.selectedPath !== "" ? wallpaperRoot.selectedPath : "Choose an image from the grid."
+                        font.pixelSize: 11
+                        font.family: "Google Sans"
+                        color: Theme.colorOnSurfaceVariant
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 4
+                        elide: Text.ElideMiddle
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 44
+                        radius: 22
+                        color: wallpaperRoot.selectedPath === ""
+                            ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.10)
+                            : applyMouse.containsMouse
+                                ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.86)
+                                : Theme.primary
+                        opacity: wallpaperRoot.selectedPath === "" ? 0.55 : 1.0
+                        Behavior on color { ColorAnimation { duration: 140 } }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: wallpaperRoot.applying ? "Applying..." : "Set wallpaper"
+                            font.pixelSize: 13
+                            font.family: "Google Sans"
+                            font.weight: Font.DemiBold
+                            color: Theme.colorOnPrimary
+                        }
+
+                        MouseArea {
+                            id: applyMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: wallpaperRoot.selectedPath === "" ? Qt.ArrowCursor : Qt.PointingHandCursor
+                            enabled: wallpaperRoot.selectedPath !== "" && !wallpaperRoot.applying
+                            onClicked: wallpaperRoot.applySelected()
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Theme.dividerColor
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: wallpaperRoot.activeWallpaperPath !== "" ? "Current wallpaper" : "Current wallpaper is not set"
+                        font.pixelSize: 11
+                        font.family: "Google Sans"
+                        color: Theme.colorOnSurfaceVariant
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: wallpaperRoot.activeWallpaperPath !== ""
+                        text: wallpaperRoot.activeWallpaperPath.split("/").pop()
+                        font.pixelSize: 12
+                        font.family: "Google Sans"
+                        color: Theme.colorOnSurface
+                        elide: Text.ElideMiddle
+                    }
+
+                    Item { Layout.fillHeight: true }
                 }
             }
         }
     }
 
-    // ── Escape to close ───────────────────────────────────────────────────
     Shortcut {
         sequence: "Escape"
         onActivated: wallpaperRoot.selectorVisible = false
