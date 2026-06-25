@@ -11,6 +11,7 @@ Singleton {
 
     readonly property string historyPath: ConfigService.configDir + "/notification_history.json"
     readonly property var popupNotifications: history.filter(function(notif) { return notif.popup })
+    readonly property var groupedHistory: _groupsForList(history)
 
     property var history: []
     property int unread: 0
@@ -27,7 +28,7 @@ Singleton {
             appIcon: notification.appIcon || "",
             appName: notification.appName || "Notification",
             body: notification.body || "",
-            image: notification.image || "",
+            image: _persistentImage(notification.image || ""),
             live: !!notification.live,
             popup: !!notification.popup,
             summary: notification.summary || "",
@@ -42,6 +43,14 @@ Singleton {
         }
     }
 
+    function _persistentImage(image) {
+        if (!image)
+            return ""
+        if (image.indexOf("image://qsimage/") === 0)
+            return ""
+        return image
+    }
+
     function _trackedForId(id) {
         var tracked = notifServer.trackedNotifications.values
         for (var i = 0; i < tracked.length; i++) {
@@ -50,6 +59,44 @@ Singleton {
                 return notif
         }
         return null
+    }
+
+    function _groupKey(notification) {
+        var appName = notification.appName || "Notification"
+        var appIcon = notification.appIcon || ""
+        return appName + "\n" + appIcon
+    }
+
+    function _groupsForList(list) {
+        var byKey = {}
+        var order = []
+
+        for (var i = 0; i < list.length; i++) {
+            var notif = list[i]
+            var key = _groupKey(notif)
+            if (!byKey[key]) {
+                byKey[key] = {
+                    key: key,
+                    appIcon: notif.appIcon || "",
+                    appName: notif.appName || "Notification",
+                    latestTime: notif.time || 0,
+                    notifications: []
+                }
+                order.push(key)
+            }
+
+            byKey[key].notifications.push(notif)
+            byKey[key].latestTime = Math.max(byKey[key].latestTime, notif.time || 0)
+        }
+
+        order.sort(function(a, b) {
+            return byKey[b].latestTime - byKey[a].latestTime
+        })
+
+        var groups = []
+        for (var j = 0; j < order.length; j++)
+            groups.push(byKey[order[j]])
+        return groups
     }
 
     function _persist() {
@@ -120,6 +167,23 @@ Singleton {
         _replaceHistory(list)
     }
 
+    function removeNotifications(ids) {
+        var removeMap = {}
+        for (var i = 0; i < ids.length; i++) {
+            removeMap[ids[i]] = true
+            var tracked = _trackedForId(ids[i])
+            if (tracked)
+                tracked.dismiss()
+        }
+
+        var list = []
+        for (var j = 0; j < root.history.length; j++) {
+            if (!removeMap[root.history[j].id])
+                list.push(root.history[j])
+        }
+        _replaceHistory(list)
+    }
+
     function clearAll() {
         var tracked = notifServer.trackedNotifications.values
         for (var i = 0; i < tracked.length; i++)
@@ -174,7 +238,7 @@ Singleton {
                     appIcon: notif.appIcon || "",
                     appName: notif.appName || "Notification",
                     body: notif.body || "",
-                    image: notif.image || "",
+                    image: _persistentImage(notif.image || ""),
                     live: false,
                     popup: false,
                     summary: notif.summary || "",
@@ -205,7 +269,7 @@ Singleton {
         actionsSupported: true
         bodySupported: true
         bodyMarkupSupported: false
-        bodyImagesSupported: false
+        bodyImagesSupported: true
         imageSupported: true
         persistenceSupported: true
         keepOnReload: true

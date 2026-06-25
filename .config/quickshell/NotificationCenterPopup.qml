@@ -14,6 +14,7 @@ PanelWindow {
     property bool isOpen: false
 
     readonly property var history: NotificationService.history
+    readonly property var groupedHistory: NotificationService.groupedHistory
 
     screen: screenRef
     anchors { top: true; bottom: true; left: true; right: true }
@@ -164,7 +165,7 @@ PanelWindow {
                 left: parent.left; right: parent.right; bottom: parent.bottom
                 leftMargin: 12; rightMargin: 12; bottomMargin: 12
             }
-            implicitHeight: root.history.length === 0
+            implicitHeight: root.groupedHistory.length === 0
                 ? 80
                 : Math.min(540, notifList.contentHeight + 4)
 
@@ -172,21 +173,25 @@ PanelWindow {
             Column {
                 anchors.centerIn: parent
                 spacing: 8
-                visible: root.history.length === 0
+                visible: root.groupedHistory.length === 0
 
-                Image {
-                    id: emptyIcon
+                Item {
                     width: 32; height: 32
-                    sourceSize: Qt.size(32, 32)
-                    source: "assets/icons/notifications-off.svg"
                     anchors.horizontalCenter: parent.horizontalCenter
-                    visible: false
-                }
-                ColorOverlay {
-                    anchors.fill: emptyIcon
-                    source: emptyIcon
-                    color: Qt.rgba(1, 1, 1, 0.3)
-                    visible: root.history.length === 0
+
+                    Image {
+                        id: emptyIcon
+                        anchors.fill: parent
+                        sourceSize: Qt.size(32, 32)
+                        source: "assets/icons/notifications-off.svg"
+                        visible: false
+                    }
+                    ColorOverlay {
+                        anchors.fill: emptyIcon
+                        source: emptyIcon
+                        color: Qt.rgba(1, 1, 1, 0.3)
+                        visible: root.groupedHistory.length === 0
+                    }
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -199,18 +204,15 @@ PanelWindow {
             ListView {
                 id: notifList
                 anchors.fill: parent
-                model: root.history
-                spacing: 6
+                model: root.groupedHistory
+                spacing: 8
                 clip: true
-                visible: root.history.length > 0
+                visible: root.groupedHistory.length > 0
                 boundsBehavior: Flickable.StopAtBounds
 
-                delegate: NotificationCard {
+                delegate: NotificationGroupCard {
                     width: notifList.width
-                    notification: modelData
-                    isPopup: false
-                    showActions: true
-                    showDismiss: true
+                    group: modelData
                 }
             }
         }

@@ -128,6 +128,11 @@ ShellRoot {
         function toggle() { toggleClipboard() }
     }
 
+    IpcHandler {
+        target: "notifications"
+        function toggle() { toggleNotificationCenter() }
+    }
+
     // ── IPC: qs ipc call screenshot region ──────────────────────────────────
     IpcHandler {
         target: "screenshot"

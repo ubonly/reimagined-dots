@@ -16,6 +16,7 @@ Rectangle {
     property string summary:      notification ? (notification.summary  || "")             : ""
     property string bodyText:     notification ? (notification.body     || "")             : ""
     property string appIcon:      notification ? (notification.appIcon  || "")             : ""
+    property string imagePath:    notification ? (notification.image    || "")             : ""
     property var    notifTime:    notification ? notification.time : new Date()
     property var    actions:      notification ? (notification.actions || []) : []
     property bool expanded: false
@@ -26,7 +27,8 @@ Rectangle {
     readonly property color cTextDim:   Theme.colorOnSurfaceVariant
     readonly property color cTextBody:  Theme.colorOnSurface
     readonly property color cTextTitle: Theme.primary
-    readonly property bool hasExpandableContent: bodyText.length > 0 || (showActions && actions.length > 0)
+    readonly property bool hasImage: imagePath.length > 0
+    readonly property bool hasExpandableContent: bodyText.length > 0 || hasImage || (showActions && actions.length > 0)
 
     implicitHeight: cardLayout.implicitHeight + 28
     Behavior on implicitHeight { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -221,6 +223,26 @@ Rectangle {
                 Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
             }
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 132
+                Layout.topMargin: 8
+                radius: 14
+                color: Theme.outlineVariant
+                clip: true
+                visible: card.expanded && card.hasImage
+                opacity: visible ? 1.0 : 0.0
+                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+
+                Image {
+                    anchors.fill: parent
+                    source: card._imageSource(card.imagePath)
+                    sourceSize: Qt.size(width, height)
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                }
+            }
+
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
@@ -271,5 +293,15 @@ Rectangle {
         if (diffSec < 3600)  return Math.floor(diffSec / 60)   + "m"
         if (diffSec < 86400) return Math.floor(diffSec / 3600) + "h"
         return Qt.formatDateTime(when, "HH:mm")
+    }
+
+    function _imageSource(path) {
+        if (!path)
+            return ""
+        if (path.indexOf("image://qsimage/") === 0 && (!card.notification || !card.notification.live))
+            return ""
+        if (path.indexOf("/") === 0)
+            return "file://" + path
+        return path
     }
 }
