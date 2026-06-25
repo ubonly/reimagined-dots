@@ -149,7 +149,7 @@ ShellRoot {
         }
     }
 
-    // ── GlobalShortcut: Super+R → toggle launcher ──────────────────────────
+    // ── GlobalShortcut: Super release → toggle launcher ────────────────────
     GlobalShortcut {
         name: "searchToggleRelease"
         onPressed: _toggleAllLaunchers()
