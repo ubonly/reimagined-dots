@@ -659,22 +659,14 @@ PanelWindow {
                 }
                 clip: true
 
-                // ── Recent apps ──────────────────────────────────────────
+                // ── Fixed recent apps header ─────────────────────────────
                 Item {
                     id: recentSection
                     anchors { top: parent.top; left: parent.left; right: parent.right }
-                    height: visible ? (recentLabel.height + 8 + recentRow.height + 16) : 0
+                    height: visible ? 142 : 0
                     visible: launcher.searchText === "" && launcher.recentApps.length > 0
                     opacity: visible ? 1.0 : 0.0
-
-                    Behavior on height {
-                        enabled: launcher._settledOpen
-                        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
-                    }
-                    Behavior on opacity {
-                        enabled: launcher._settledOpen
-                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
-                    }
+                    z: 2
 
                     Text {
                         id: recentLabel
@@ -775,9 +767,10 @@ PanelWindow {
 
                 GridView {
                     id: appScroll
+                    z: 1
                     anchors {
                         top: recentSection.visible ? recentSection.bottom : parent.top
-                        topMargin: recentSection.visible ? 4 : 0
+                        topMargin: recentSection.visible ? 8 : 0
                         left: parent.left
                         right: parent.right
                         bottom: parent.bottom
