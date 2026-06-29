@@ -49,7 +49,6 @@ fi
 # Rerun matugen on current wallpaper
 WP=$(read_config_val "wallpaperPath" "")
 if [ -n "$WP" ] && [ -f "$WP" ]; then
-    matugen image "$WP" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 --quiet
     matugen image "$WP" -m "$MODE" "${TYPE_ARGS[@]}" --source-color-index 0 -j hex > "$HOME/.config/quickshell/colors.json"
-    python3 "$HOME/.config/quickshell/harmonize_kitty.py"
+    python3 "$HOME/.config/quickshell/apply_matugen_pipeline.py" "$WP"
 fi
