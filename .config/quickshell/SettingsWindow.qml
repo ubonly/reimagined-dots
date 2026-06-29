@@ -84,6 +84,10 @@ FloatingWindow {
         }
     }
 
+    function openPath(path) {
+        Quickshell.execDetached(["xdg-open", path]);
+    }
+
     function clampSettingsPage(page) {
         var parsed = parseInt(page, 10);
         if (isNaN(parsed))
@@ -246,6 +250,37 @@ FloatingWindow {
         onTriggered: layoutQuery.running = true
     }
 
+    Process {
+        id: systemInfoQuery
+        property string distro: "Unknown Linux"
+        property string kernel: "Unknown"
+        property string hyprlandVersion: "Unknown"
+        property string quickshellVersion: "Unknown"
+        property string configVersion: "local"
+
+        command: ["bash", "-lc", "source /etc/os-release 2>/dev/null || true; distro=${PRETTY_NAME:-${NAME:-Unknown Linux}}; kernel=$(uname -r); hypr=$(hyprctl version -j 2>/dev/null | jq -r .version 2>/dev/null || hyprctl version 2>/dev/null | head -n1 || echo Unknown); qsver=$(qs --version 2>/dev/null | head -n1 || quickshell --version 2>/dev/null | head -n1 || echo Unknown); commit=$(git -C /home/ubonly/reimagined-dots rev-parse --short HEAD 2>/dev/null || echo local); printf '%s|%s|%s|%s|%s\\n' \"$distro\" \"$kernel\" \"$hypr\" \"$qsver\" \"$commit\""]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 7
+        stdout: SplitParser {
+            onRead: function(line) {
+                var parts = line.trim().split("|");
+                if (parts.length >= 5) {
+                    systemInfoQuery.distro = parts[0];
+                    systemInfoQuery.kernel = parts[1];
+                    systemInfoQuery.hyprlandVersion = parts[2];
+                    systemInfoQuery.quickshellVersion = parts[3];
+                    systemInfoQuery.configVersion = parts[4];
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 30000; repeat: true
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 7
+        triggeredOnStart: true
+        onTriggered: systemInfoQuery.running = true
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     //  HELPER: SVG icon with color overlay
     // ══════════════════════════════════════════════════════════════════════
@@ -364,6 +399,38 @@ FloatingWindow {
             id: rowArea; anchors.fill: parent; z: -1
             hoverEnabled: true; cursorShape: Qt.PointingHandCursor
             onClicked: srow.clicked()
+        }
+    }
+
+    component InfoRow: RowLayout {
+        id: irow
+        property string label: ""
+        property string value: ""
+
+        Layout.fillWidth: true
+        implicitHeight: 42
+        spacing: 16
+
+        Text {
+            text: irow.label
+            font.pixelSize: 14
+            font.family: "Google Sans"
+            font.weight: Font.Medium
+            color: settingsRoot.textPrimary
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        Item { Layout.fillWidth: true }
+
+        Text {
+            text: irow.value
+            font.pixelSize: 12
+            font.family: "Google Sans"
+            color: settingsRoot.textSecondary
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
+            Layout.alignment: Qt.AlignVCenter
+            Layout.maximumWidth: 360
         }
     }
 
@@ -606,7 +673,7 @@ FloatingWindow {
                         NavItem { navIconSource: "assets/icons/apps.svg";               navTitle: "Dock";                navSub: "Shelf style and behavior";     navIndex: 4 }
                         NavItem { navIconSource: "assets/icons/accessibility.svg";      navTitle: "Accessibility";       navSub: "Screen reader, magnification"; navIndex: 5 }
                         NavItem { navIconSource: "assets/icons/build.svg";              navTitle: "System preferences";  navSub: "Storage, power, language";     navIndex: 6 }
-                        NavItem { navIconSource: "assets/icons/info.svg";               navTitle: "About ChromeOS";      navSub: "Updates, help";                navIndex: 7 }
+                        NavItem { navIconSource: "assets/icons/info.svg";               navTitle: "About your system";   navSub: "Version, distro, config";      navIndex: 7 }
 
                         Item { Layout.fillHeight: true }
                     }
@@ -674,7 +741,7 @@ FloatingWindow {
                                     Text {
                                         text: {
                                             var titles = ["","","Device","Wallpaper and style",
-                                                "Dock","Accessibility","System preferences","About ChromeOS"]
+                                                "Dock","Accessibility","System preferences","About your system"]
                                             return titles[settingsRoot.currentPage] || "Settings"
                                         }
                                         font.pixelSize: 15; font.family: "Google Sans"
@@ -687,7 +754,7 @@ FloatingWindow {
                                     Item {
                                         Layout.fillWidth: true
                                         implicitHeight: 120
-                                         visible: settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6
+                                         visible: settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7
                                         Text {
                                             anchors.centerIn: parent
                                             text: "Coming soon"
@@ -1296,6 +1363,96 @@ FloatingWindow {
                                                           color: settingsRoot.activeItem
                                                       }
                                                   }
+                                             }
+                                         }
+                                     }
+
+                                     // PAGE 7: About your system
+                                     ColumnLayout {
+                                         visible: settingsRoot.currentPage === 7
+                                         Layout.fillWidth: true
+                                         spacing: 12
+
+                                         Text {
+                                             text: "System"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 4
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: systemInfoCol.implicitHeight + 32
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: systemInfoCol
+                                                 anchors { fill: parent; margins: 16 }
+                                                 spacing: 12
+
+                                                 InfoRow { label: "Distribution"; value: systemInfoQuery.distro }
+                                                 InfoRow { label: "Kernel"; value: systemInfoQuery.kernel }
+                                                 InfoRow { label: "Hyprland"; value: systemInfoQuery.hyprlandVersion }
+                                                 InfoRow { label: "QuickShell"; value: systemInfoQuery.quickshellVersion }
+                                             }
+                                         }
+
+                                         Text {
+                                             text: "Configuration"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 8
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: configInfoCol.implicitHeight + 8
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: configInfoCol
+                                                 anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+                                                 spacing: 0
+
+                                                 InfoRow {
+                                                     Layout.leftMargin: 16
+                                                     Layout.rightMargin: 16
+                                                     label: "Config version"
+                                                     value: systemInfoQuery.configVersion
+                                                 }
+
+                                                 Rectangle {
+                                                     Layout.fillWidth: true
+                                                     Layout.leftMargin: 16; Layout.rightMargin: 16
+                                                     height: 1
+                                                     color: settingsRoot.dividerColor
+                                                 }
+
+                                                 SettingsRow {
+                                                     iconSource: "assets/icons/settings.svg"
+                                                     title: "Open config folder"
+                                                     subtitle: ConfigService.configDir
+                                                     hasChevron: true
+                                                     showDivider: true
+                                                     onClicked: settingsRoot.openPath(ConfigService.configDir)
+                                                 }
+
+                                                 SettingsRow {
+                                                     iconSource: "assets/icons/build.svg"
+                                                     title: "Open repository folder"
+                                                     subtitle: "/home/ubonly/reimagined-dots"
+                                                     hasChevron: true
+                                                     showDivider: false
+                                                     onClicked: settingsRoot.openPath("/home/ubonly/reimagined-dots")
+                                                 }
                                              }
                                          }
                                      }
