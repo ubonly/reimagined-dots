@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 import "Theme"
+import "services"
 
 PanelWindow {
     id: clipboardPopup
@@ -16,15 +17,24 @@ PanelWindow {
     property bool _animVisible: false
     property var historyData: []
     property int selectedIndex: 0
+    property real windowX: -1
+    property real windowY: -1
+    readonly property real screenWidth: screenRef ? screenRef.width : width
+    readonly property real screenHeight: screenRef ? screenRef.height : height
+    readonly property real windowWidth: Math.min(340, Math.max(300, screenWidth - 32))
+    readonly property real windowHeight: Math.min(440, Math.max(330, screenHeight - 112))
 
-    readonly property color popupBg: Theme.isLight ? Qt.rgba(0.96, 0.95, 0.98, 0.98) : Qt.rgba(0.18, 0.17, 0.22, 0.98)
-    readonly property color rowHover: Theme.isLight ? Qt.rgba(0.12, 0.13, 0.16, 0.08) : Qt.rgba(1, 1, 1, 0.07)
-    readonly property color rowSelected: Theme.isLight ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.13) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18)
-    readonly property color footerBg: Theme.isLight ? Qt.rgba(0.12, 0.13, 0.16, 0.10) : Qt.rgba(1, 1, 1, 0.10)
+    readonly property color popupBg: Theme.isLight
+        ? Theme.surface
+        : Qt.rgba(Theme.surfaceVariant.r, Theme.surfaceVariant.g, Theme.surfaceVariant.b, 0.98)
+    readonly property color headerBg: Qt.rgba(Theme.primaryContainer.r, Theme.primaryContainer.g, Theme.primaryContainer.b, Theme.isLight ? 0.28 : 0.34)
+    readonly property color rowHover: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.07 : 0.08)
+    readonly property color rowSelected: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.16 : 0.22)
+    readonly property color footerBg: Qt.rgba(Theme.primaryContainer.r, Theme.primaryContainer.g, Theme.primaryContainer.b, Theme.isLight ? 0.24 : 0.30)
     readonly property color textPrimary: Theme.colorOnSurface
     readonly property color textSecondary: Theme.colorOnSurfaceVariant
-    readonly property color iconColor: Theme.isLight ? Qt.rgba(0.22, 0.22, 0.26, 0.88) : Qt.rgba(0.92, 0.91, 0.96, 0.88)
-    readonly property color borderColor: Theme.isLight ? Qt.rgba(0.12, 0.13, 0.16, 0.16) : Qt.rgba(1, 1, 1, 0.12)
+    readonly property color iconColor: Theme.colorOnSurface
+    readonly property color borderColor: Qt.rgba(Theme.outline.r, Theme.outline.g, Theme.outline.b, Theme.isLight ? 0.40 : 0.34)
 
     screen: screenRef
     anchors { top: true; bottom: true; left: true; right: true }
@@ -39,6 +49,7 @@ PanelWindow {
         if (isOpen) {
             _animVisible = true;
             selectedIndex = 0;
+            restoreWindowPosition();
             refreshProc.running = true;
             focusDelay.restart();
         } else {
@@ -80,6 +91,39 @@ PanelWindow {
 
     function toggle() {
         isOpen = !isOpen;
+    }
+
+    function clamp(value, minValue, maxValue) {
+        return Math.max(minValue, Math.min(maxValue, value));
+    }
+
+    function defaultWindowX() {
+        return Math.round((screenWidth - windowWidth) / 2);
+    }
+
+    function defaultWindowY() {
+        return Math.round(Math.max(24, screenHeight - windowHeight - 72));
+    }
+
+    function restoreWindowPosition() {
+        var savedX = ConfigService.ready ? ConfigService.values.clipboardWindowX : -1;
+        var savedY = ConfigService.ready ? ConfigService.values.clipboardWindowY : -1;
+        windowX = savedX >= 0 ? savedX : defaultWindowX();
+        windowY = savedY >= 0 ? savedY : defaultWindowY();
+        clampWindowPosition();
+    }
+
+    function clampWindowPosition() {
+        windowX = clamp(windowX, 8, Math.max(8, screenWidth - windowWidth - 8));
+        windowY = clamp(windowY, 8, Math.max(8, screenHeight - windowHeight - 56));
+    }
+
+    function saveWindowPosition() {
+        clampWindowPosition();
+        if (!ConfigService.ready)
+            return;
+        ConfigService.values.clipboardWindowX = Math.round(windowX);
+        ConfigService.values.clipboardWindowY = Math.round(windowY);
     }
 
     function itemText(item) {
@@ -172,12 +216,11 @@ PanelWindow {
 
     Rectangle {
         id: container
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 72
-        width: Math.min(320, parent.width - 32)
-        height: Math.min(422, parent.height - 112)
-        radius: 12
+        x: clipboardPopup.windowX
+        y: clipboardPopup.windowY
+        width: clipboardPopup.windowWidth
+        height: clipboardPopup.windowHeight
+        radius: 14
         color: clipboardPopup.popupBg
         border.width: 1
         border.color: clipboardPopup.borderColor
@@ -186,11 +229,11 @@ PanelWindow {
 
         scale: clipboardPopup.isOpen ? 1.0 : 0.96
         opacity: clipboardPopup.isOpen ? 1.0 : 0.0
-        transformOrigin: Item.Bottom
+        transformOrigin: Item.Center
 
         transform: Translate {
-            y: clipboardPopup.isOpen ? 0 : 22
-            Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            y: clipboardPopup.isOpen ? 0 : 14
+            Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         }
 
         Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
@@ -209,16 +252,47 @@ PanelWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 12
-            spacing: 8
+            spacing: 0
 
-            RowLayout {
+            Rectangle {
+                id: titlebar
                 Layout.fillWidth: true
-                Layout.preferredHeight: 24
-                spacing: 8
+                Layout.preferredHeight: 42
+                color: clipboardPopup.headerBg
+
+                MouseArea {
+                    id: dragArea
+                    property real startMouseX: 0
+                    property real startMouseY: 0
+                    property real startWindowX: 0
+                    property real startWindowY: 0
+
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                    onPressed: function(mouse) {
+                        startMouseX = mouse.x;
+                        startMouseY = mouse.y;
+                        startWindowX = clipboardPopup.windowX;
+                        startWindowY = clipboardPopup.windowY;
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (!pressed)
+                            return;
+                        clipboardPopup.windowX = clipboardPopup.clamp(startWindowX + mouse.x - startMouseX, 8, Math.max(8, clipboardPopup.screenWidth - container.width - 8));
+                        clipboardPopup.windowY = clipboardPopup.clamp(startWindowY + mouse.y - startMouseY, 8, Math.max(8, clipboardPopup.screenHeight - container.height - 56));
+                    }
+                    onReleased: {
+                        clipboardPopup.saveWindowPosition();
+                    }
+                }
 
                 Text {
-                    Layout.fillWidth: true
+                    anchors {
+                        left: parent.left
+                        leftMargin: 14
+                        verticalCenter: parent.verticalCenter
+                    }
                     text: "Clipboard"
                     color: clipboardPopup.textPrimary
                     font.family: "Google Sans"
@@ -228,15 +302,27 @@ PanelWindow {
                 }
 
                 ToolIconButton {
+                    anchors {
+                        right: parent.right
+                        rightMargin: 10
+                        verticalCenter: parent.verticalCenter
+                    }
                     iconSource: "assets/icons/close.svg"
                     visibleButton: true
                     onClicked: clipboardPopup.isOpen = false
                 }
             }
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: clipboardPopup.borderColor
+            }
+
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.margins: 10
 
                 ListView {
                     id: listView
@@ -439,6 +525,9 @@ PanelWindow {
                 Layout.preferredHeight: 58
                 radius: 8
                 color: clipboardPopup.footerBg
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                Layout.bottomMargin: 10
 
                 RowLayout {
                     anchors.fill: parent
@@ -499,7 +588,7 @@ PanelWindow {
         height: 24
         radius: 12
         color: visibleButton || buttonMouse.containsMouse
-            ? (Theme.isLight ? Qt.rgba(0.12, 0.13, 0.16, 0.08) : Qt.rgba(1, 1, 1, 0.09))
+            ? Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, Theme.isLight ? 0.08 : 0.10)
             : "transparent"
 
         SvgIcon {
