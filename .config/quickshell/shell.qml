@@ -100,6 +100,10 @@ ShellRoot {
         }
     }
 
+    ChromeLock {
+        id: chromeLock
+    }
+
     // ── GlobalShortcut: Win+I → toggle settings ───────────────────────────
     GlobalShortcut {
         name: "settingsToggle"
