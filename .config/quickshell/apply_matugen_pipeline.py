@@ -74,6 +74,24 @@ def append_once(path, marker, content):
     atomic_write(path, existing + separator + content)
 
 
+def replace_block(path, start_marker, end_marker, content):
+    path = Path(path).expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    start = existing.find(start_marker)
+    end = existing.find(end_marker, start + len(start_marker)) if start != -1 else -1
+    if start != -1 and end != -1:
+        end += len(end_marker)
+        next_newline = existing.find("\n", end)
+        if next_newline != -1:
+            end = next_newline + 1
+        replacement = content if content.endswith("\n") else content + "\n"
+        atomic_write(path, existing[:start] + replacement + existing[end:])
+        return
+    separator = "" if existing.endswith("\n") or existing == "" else "\n"
+    atomic_write(path, existing + separator + content)
+
+
 def run_detached(command):
     try:
         subprocess.Popen(
@@ -174,8 +192,30 @@ color15              {color("on_surface_variant")}
 """
     atomic_write(terminal_dir / "kitty-colors.conf", content)
     atomic_write(Path.home() / ".config" / "kitty" / "colors.conf", content)
+    kitty_conf = Path.home() / ".config" / "kitty" / "kitty.conf"
+    font_block = (
+        "# BEGIN_QUICKSHELL_TERMINAL_FONT\n"
+        "font_family      JetBrains Mono Nerd Font\n"
+        "bold_font        auto\n"
+        "italic_font      auto\n"
+        "bold_italic_font auto\n"
+        "font_size        11.0\n"
+        "# END_QUICKSHELL_TERMINAL_FONT\n"
+    )
+    replace_block(
+        kitty_conf,
+        "# BEGIN_KITTY_FONTS",
+        "# END_KITTY_FONTS",
+        font_block,
+    )
+    replace_block(
+        kitty_conf,
+        "# BEGIN_QUICKSHELL_TERMINAL_FONT",
+        "# END_QUICKSHELL_TERMINAL_FONT",
+        font_block,
+    )
     append_once(
-        Path.home() / ".config" / "kitty" / "kitty.conf",
+        kitty_conf,
         "# BEGIN_QUICKSHELL_MATUGEN_THEME",
         "\n# BEGIN_QUICKSHELL_MATUGEN_THEME\n"
         "include ~/.config/quickshell/terminal/kitty-colors.conf\n"

@@ -36,6 +36,7 @@
             curl
             zenity
             hyprpaper
+            nerd-fonts.jetbrains-mono
           ];
 
           # Automatically link the configuration files to ~/.config

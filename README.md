@@ -22,6 +22,7 @@ If you prefer to install things by hand, you will need:
 - `quickshell`
 - `ttf-roboto`
 - `inter-font`
+- `ttf-jetbrains-mono-nerd`
 - `ttf-google-sans`
 - `ttf-material-symbols-variable-git`
 - `jq`

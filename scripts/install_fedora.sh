@@ -26,6 +26,7 @@ FEDORA_PACKAGES=(
     "wl-clipboard"
     "hyprlock"
     "curl"
+    "unzip"
     "zenity"
     "blueman"
     "google-roboto-fonts"
@@ -93,6 +94,16 @@ if ! fc-list : family | grep -qi "Inter" 2>/dev/null; then
         "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Medium.ttf"
     curl -L -o "$HOME/.local/share/fonts/Inter-Bold.ttf" \
         "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.ttf"
+    NEED_FC_CACHE=1
+fi
+
+# JetBrainsMono Nerd Font for the Starship terminal prompt
+if ! fc-match "JetBrains Mono Nerd Font" | grep -qi "JetBrainsMono Nerd Font" 2>/dev/null; then
+    echo "Скачивание шрифта JetBrainsMono Nerd Font..."
+    mkdir -p "$HOME/.local/share/fonts/JetBrainsMonoNerd"
+    curl -L -o /tmp/JetBrainsMonoNerdFont.zip \
+        "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    unzip -o /tmp/JetBrainsMonoNerdFont.zip -d "$HOME/.local/share/fonts/JetBrainsMonoNerd" '*.ttf' >/dev/null
     NEED_FC_CACHE=1
 fi
 
