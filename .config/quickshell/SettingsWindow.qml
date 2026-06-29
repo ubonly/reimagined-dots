@@ -1441,17 +1441,8 @@ FloatingWindow {
                                                      title: "Open config folder"
                                                      subtitle: ConfigService.configDir
                                                      hasChevron: true
-                                                     showDivider: true
-                                                     onClicked: settingsRoot.openPath(ConfigService.configDir)
-                                                 }
-
-                                                 SettingsRow {
-                                                     iconSource: "assets/icons/build.svg"
-                                                     title: "Open repository folder"
-                                                     subtitle: "/home/ubonly/reimagined-dots"
-                                                     hasChevron: true
                                                      showDivider: false
-                                                     onClicked: settingsRoot.openPath("/home/ubonly/reimagined-dots")
+                                                     onClicked: settingsRoot.openPath(ConfigService.configDir)
                                                  }
                                              }
                                          }

@@ -18,6 +18,8 @@ ShellRoot {
     property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
     readonly property real effectiveDockOpacity: dockTransparencyEnabled ? dockOpacity : 1.0
+    readonly property int dockPanelHeight: dockStyle === "rounded" ? 56 : 48
+    readonly property int dockTopRadius: dockStyle === "rounded" ? 28 : (dockStyle === "floating" ? 24 : 0)
     property bool dndMode: ConfigService.ready ? ConfigService.values.dnd : false
 
     property string kbLayout: "US"
@@ -379,11 +381,11 @@ ShellRoot {
                 PanelWindow {
                     screen: modelData
                     anchors.bottom: true
-                    width: root.dockStyle === "floating" ? Math.min(modelData.width - 24, 1240) : modelData.width
-                    implicitHeight: 48
+                    implicitWidth: root.dockStyle === "floating" ? Math.min(modelData.width - 24, 1240) : modelData.width
+                    implicitHeight: root.dockPanelHeight
 
                     // Резервируем высоту панели (floating не резервирует)
-                    exclusiveZone: root.dockStyle === "floating" ? 0 : 48
+                    exclusiveZone: root.dockStyle === "floating" ? 0 : root.dockPanelHeight
 
                 WlrLayershell.layer:     WlrLayer.Top
                 WlrLayershell.namespace: "quickshell-dock"
@@ -396,8 +398,8 @@ ShellRoot {
                     height: parent.height
                     anchors.bottom: parent.bottom
                     radius: 0
-                    topLeftRadius: root.dockStyle === "square" ? 0 : 24
-                    topRightRadius: root.dockStyle === "square" ? 0 : 24
+                    topLeftRadius: root.dockTopRadius
+                    topRightRadius: root.dockTopRadius
                     bottomLeftRadius: root.dockStyle === "floating" ? 24 : 0
                     bottomRightRadius: root.dockStyle === "floating" ? 24 : 0
                     clip: true
