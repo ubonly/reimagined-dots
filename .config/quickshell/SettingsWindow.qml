@@ -51,7 +51,7 @@ FloatingWindow {
     property int    currentPage: 3
     property bool   _settingsPageRestored: false
     readonly property string themeMode: ConfigService.ready ? ConfigService.values.themeMode : "dark"
-    readonly property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
+    readonly property string dockStyle: ConfigService.ready && ConfigService.values.dockStyle === "square" ? "square" : "rounded"
     readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
@@ -948,8 +948,8 @@ FloatingWindow {
                                                             Repeater {
                                                                 model: [
                                                                     { name: "Rounded", value: "rounded" },
-                                                                    { name: "Square", value: "square" },
-                                                                    { name: "Floating", value: "floating" }
+                                                                    { name: "Square", value: "square" }
+                                                                    // Floating is intentionally hidden while the dock is matched to ChromeOS.
                                                                 ]
                                                                 delegate: Rectangle {
                                                                     property bool isActive: settingsRoot.dockStyle === modelData.value
@@ -977,9 +977,13 @@ FloatingWindow {
                                                     }
                                                 }
 
+                                                /*
+                                                 * Dock transparency is intentionally disabled for now.
+                                                 * The ChromeOS-style shelf uses a fixed translucent surface instead.
                                                 Item {
                                                     Layout.fillWidth: true
-                                                    implicitHeight: 82
+                                                    implicitHeight: 0
+                                                    visible: false
                                                     RowLayout {
                                                         anchors { fill: parent; leftMargin: 66; rightMargin: 16; topMargin: 0; bottomMargin: 16 }
                                                         spacing: 16
@@ -1022,6 +1026,7 @@ FloatingWindow {
                                                         }
                                                     }
                                                 }
+                                                */
 
                                                 SettingsRow {
                                                     iconSource: "assets/icons/palette-outline.svg"
@@ -1037,9 +1042,11 @@ FloatingWindow {
 
                                                 Item {
                                                     Layout.fillWidth: true
-                                                    implicitHeight: settingsRoot.dockTransparencyEnabled ? 70 : 0
-                                                    visible: settingsRoot.dockTransparencyEnabled
+                                                    implicitHeight: 0
+                                                    visible: false
 
+                                                    /*
+                                                     * Dock opacity slider is disabled with the transparency toggle.
                                                     RowLayout {
                                                         anchors { fill: parent; leftMargin: 66; rightMargin: 16; topMargin: 0; bottomMargin: 14 }
                                                         spacing: 18
@@ -1107,6 +1114,7 @@ FloatingWindow {
                                                             Layout.alignment: Qt.AlignVCenter
                                                         }
                                                     }
+                                                    */
                                                 }
                                             }
                                         }

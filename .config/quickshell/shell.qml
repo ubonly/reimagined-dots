@@ -17,9 +17,10 @@ ShellRoot {
     property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
-    readonly property real effectiveDockOpacity: dockTransparencyEnabled ? dockOpacity : 1.0
-    readonly property int dockPanelHeight: dockStyle === "rounded" ? 56 : 48
-    readonly property int dockTopRadius: dockStyle === "rounded" ? 28 : (dockStyle === "floating" ? 24 : 0)
+    readonly property string effectiveDockStyle: dockStyle === "square" ? "square" : "rounded"
+    readonly property real effectiveDockOpacity: 1.0
+    readonly property int dockPanelHeight: 60
+    readonly property int dockTopRadius: effectiveDockStyle === "square" ? 0 : 30
     property bool dndMode: ConfigService.ready ? ConfigService.values.dnd : false
 
     property string kbLayout: "US"
@@ -381,11 +382,10 @@ ShellRoot {
                 PanelWindow {
                     screen: modelData
                     anchors.bottom: true
-                    implicitWidth: root.dockStyle === "floating" ? Math.min(modelData.width - 24, 1240) : modelData.width
+                    implicitWidth: modelData.width
                     implicitHeight: root.dockPanelHeight
 
-                    // Резервируем высоту панели (floating не резервирует)
-                    exclusiveZone: root.dockStyle === "floating" ? 0 : root.dockPanelHeight
+                    exclusiveZone: root.dockPanelHeight
 
                 WlrLayershell.layer:     WlrLayer.Top
                 WlrLayershell.namespace: "quickshell-dock"
@@ -400,11 +400,11 @@ ShellRoot {
                     radius: 0
                     topLeftRadius: root.dockTopRadius
                     topRightRadius: root.dockTopRadius
-                    bottomLeftRadius: root.dockStyle === "floating" ? 24 : 0
-                    bottomRightRadius: root.dockStyle === "floating" ? 24 : 0
+                    bottomLeftRadius: 0
+                    bottomRightRadius: 0
                     clip: true
                     color: Qt.rgba(Theme.dockBg.r, Theme.dockBg.g, Theme.dockBg.b, Theme.dockBg.a * root.effectiveDockOpacity)
-                    border.width: 1
+                    border.width: 0
                     border.color: Qt.rgba(Theme.dockBorder.r, Theme.dockBorder.g, Theme.dockBorder.b, Theme.dockBorder.a * root.effectiveDockOpacity)
                 }
 
@@ -415,7 +415,7 @@ ShellRoot {
                         left: parent.left; leftMargin: 12
                         verticalCenter: parent.verticalCenter
                     }
-                    width: 38; height: 38; radius: 19
+                    width: 42; height: 42; radius: 21
                     color: (appLauncherInst && appLauncherInst.isOpen) || launcherBtnArea.containsMouse
                         ? Theme.dockPillHover
                         : Theme.dockPill
@@ -570,7 +570,7 @@ ShellRoot {
                     Rectangle {
                         id: combinedPill
                         width: combinedRow.implicitWidth
-                        height: 38; radius: 19
+                        height: 42; radius: 21
                         anchors.verticalCenter: parent.verticalCenter
                         color: Theme.dockPill
                         border.color: Theme.dockBorder; border.width: 1
@@ -584,7 +584,7 @@ ShellRoot {
                             Item {
                                 id: notifSection
                                 visible: NotificationService.history.length > 0
-                                width: 42; height: 38
+                                width: 42; height: 42
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -616,7 +616,7 @@ ShellRoot {
 
                             Item {
                                 visible: NotificationService.history.length > 0
-                                width: 2; height: 38
+                                width: 2; height: 42
                                 Rectangle {
                                     width: 2; height: 20
                                     anchors.centerIn: parent
@@ -626,7 +626,7 @@ ShellRoot {
 
                             Item {
                                 id: dateSection
-                                width: dateTxt.implicitWidth + 24; height: 38
+                                width: dateTxt.implicitWidth + 28; height: 42
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -645,7 +645,7 @@ ShellRoot {
                             }
 
                             Item {
-                                width: 2; height: 38
+                                width: 2; height: 42
                                 Rectangle {
                                     width: 2; height: 20
                                     anchors.centerIn: parent
@@ -655,7 +655,7 @@ ShellRoot {
 
                             Item {
                                 id: statusSection
-                                width: wifiTimeRow.implicitWidth + 28; height: 38
+                                width: wifiTimeRow.implicitWidth + 32; height: 42
 
                                 Rectangle {
                                     anchors.fill: parent

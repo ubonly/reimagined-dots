@@ -24,8 +24,8 @@ Item {
     readonly property bool   hasWindows:  windowClass !== ""
     readonly property bool   hasResolvedIcon: iconPath.length > 0
 
-    implicitWidth:  52
-    implicitHeight: 52
+    implicitWidth:  54
+    implicitHeight: 54
 
     // ── ПУСТО: точка ─────────────────────────────────────────────────────
     Rectangle {
@@ -48,14 +48,14 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent
-            width:  root.isFocused ? 44 : (mouse.containsMouse ? 40 : 36)
+            width:  root.isFocused ? 46 : (mouse.containsMouse ? 42 : 40)
             height: width
-            radius: 14
+            radius: width / 2
             color:  root.isFocused
-                    ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.28)
-                    : (mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
-            border.color: root.isFocused ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38) : "transparent"
-            border.width: 1
+                    ? Theme.dockPillHover
+                    : (mouse.containsMouse ? Theme.dockPill : "transparent")
+            border.color: "transparent"
+            border.width: 0
             Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Behavior on color  { ColorAnimation  { duration: 160 } }
@@ -64,7 +64,7 @@ Item {
         Image {
             id: iconImg
             anchors.centerIn: parent
-            width:  root.isFocused ? 28 : 24
+            width:  root.isFocused ? 30 : 28
             height: width
 
             source: root.hasResolvedIcon ? ("file://" + root.iconPath) : "assets/icons/apps.svg"
@@ -74,8 +74,8 @@ Item {
             sourceSize: Qt.size(64, 64)
             fillMode: Image.PreserveAspectFit
             visible: !root.dockIconFillEnabled
-            opacity: root.isFocused ? 1.0 : 0.72
-            scale:   mouse.containsMouse ? 1.12 : 1.0
+            opacity: root.isFocused ? 1.0 : 0.88
+            scale:   mouse.containsMouse ? 1.08 : 1.0
             Behavior on width   { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Behavior on scale   { NumberAnimation { duration: 160; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
             Behavior on opacity { NumberAnimation { duration: 160 } }
