@@ -37,17 +37,23 @@ Item {
     property color switchKnob: colorOnSurface
     property color dividerColor: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.1)
     property color dockBg: {
-        let base = isLight ? Qt.rgba(0.18, 0.16, 0.12, 1.0) : Qt.rgba(0.08, 0.075, 0.07, 1.0);
+        let base = isLight ? Qt.rgba(0.96, 0.96, 0.98, 1.0) : Qt.rgba(0.08, 0.075, 0.07, 1.0);
         let tint = primary;
-        let strength = isLight ? 0.06 : 0.08;
+        let strength = isLight ? 0.035 : 0.08;
         let r = base.r * (1 - strength) + tint.r * strength;
         let g = base.g * (1 - strength) + tint.g * strength;
         let b = base.b * (1 - strength) + tint.b * strength;
-        return Qt.rgba(r, g, b, isLight ? 0.86 : 0.88);
+        return Qt.rgba(r, g, b, isLight ? 0.90 : 0.88);
     }
-    property color dockBorder: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.10 : 0.06)
-    property color dockPill: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.12 : 0.11)
-    property color dockPillHover: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.18 : 0.18)
+    property color dockBorder: isLight
+        ? Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.08)
+        : Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.06)
+    property color dockPill: isLight
+        ? Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.07)
+        : Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.11)
+    property color dockPillHover: isLight
+        ? Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.12)
+        : Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.18)
     property color dockText: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.92)
     property color dockTextStrong: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, 0.96)
     property color dockDivider: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.18 : 0.20)
