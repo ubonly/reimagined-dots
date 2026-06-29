@@ -66,6 +66,11 @@ Singleton {
             property string wallpaperState: ""
             property string matugenScheme: "scheme-tonal-spot"
             property bool use24Hour: true
+            property int settingsPage: 3
+            property real settingsWindowX: -1
+            property real settingsWindowY: -1
+            property real clipboardWindowX: -1
+            property real clipboardWindowY: -1
         }
     }
 }

@@ -90,13 +90,18 @@ ShellRoot {
     Loader {
         id: settingsInst
         property bool settingsVisible: false
-        active: settingsVisible
+        active: true
         sourceComponent: SettingsWindow {
-            settingsVisible: true
+            settingsVisible: settingsInst.settingsVisible
             onSettingsVisibleChanged: {
-                if (!settingsVisible) settingsInst.settingsVisible = false
+                if (settingsInst.settingsVisible !== settingsVisible)
+                    settingsInst.settingsVisible = settingsVisible
             }
             onOpenWallpaperBrowser: wallpaperSelector.openBrowser("")
+        }
+        onSettingsVisibleChanged: {
+            if (item && item.settingsVisible !== settingsVisible)
+                item.settingsVisible = settingsVisible
         }
     }
 

@@ -48,7 +48,8 @@ FloatingWindow {
     // ══════════════════════════════════════════════════════════════════════
     //  STATE
     // ══════════════════════════════════════════════════════════════════════
-    property int    currentPage: 2
+    property int    currentPage: 3
+    property bool   _settingsPageRestored: false
     readonly property string themeMode: ConfigService.ready ? ConfigService.values.themeMode : "dark"
     readonly property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
     readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
@@ -83,10 +84,46 @@ FloatingWindow {
         }
     }
 
-    onSettingsVisibleChanged: {
-        if (settingsVisible) {
-            currentPage = 3;
+    function clampSettingsPage(page) {
+        var parsed = parseInt(page, 10);
+        if (isNaN(parsed))
+            return 3;
+        return Math.max(2, Math.min(7, parsed));
+    }
+
+    function restoreSettingsPage() {
+        if (!ConfigService.ready || _settingsPageRestored)
+            return;
+
+        currentPage = clampSettingsPage(ConfigService.values.settingsPage);
+        _settingsPageRestored = true;
+    }
+
+    function closeSettings() {
+        windowState.saveNow();
+        settingsVisible = false;
+    }
+
+    Component.onCompleted: restoreSettingsPage()
+
+    onCurrentPageChanged: {
+        if (ConfigService.ready) {
+            ConfigService.values.settingsPage = clampSettingsPage(currentPage);
         }
+    }
+
+    Connections {
+        target: ConfigService
+        function onReadyChanged() {
+            settingsRoot.restoreSettingsPage();
+        }
+    }
+
+    FloatingWindowState {
+        id: windowState
+        windowTitle: "Settings"
+        kind: "settings"
+        active: settingsRoot.settingsVisible
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -497,7 +534,7 @@ FloatingWindow {
     // Escape to close
     Shortcut {
         sequence: "Escape"
-        onActivated: settingsRoot.settingsVisible = false
+        onActivated: settingsRoot.closeSettings()
     }
 
     Rectangle {
@@ -521,7 +558,7 @@ FloatingWindow {
             MouseArea {
                 id: closeBtnMA; anchors.fill: parent
                 hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                onClicked: settingsRoot.settingsVisible = false
+                onClicked: settingsRoot.closeSettings()
             }
         }
 

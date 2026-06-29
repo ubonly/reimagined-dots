@@ -51,6 +51,7 @@ FloatingWindow {
             refreshProc.running = true;
             focusDelay.restart();
         } else {
+            windowState.saveNow();
             closeTimer.restart();
         }
     }
@@ -88,7 +89,14 @@ FloatingWindow {
     }
 
     function toggle() {
+        if (isOpen)
+            windowState.saveNow();
         isOpen = !isOpen;
+    }
+
+    function closeClipboard() {
+        windowState.saveNow();
+        isOpen = false;
     }
 
     function itemText(item) {
@@ -144,7 +152,7 @@ FloatingWindow {
                 : ["bash", "-c", "printf '%s' \"$1\" | cliphist decode | wl-copy", "--", item.line];
         }
         proc.running = true;
-        clipboardPopup.isOpen = false;
+        clipboardPopup.closeClipboard();
     }
 
     function deleteItem(item) {
@@ -171,6 +179,13 @@ FloatingWindow {
         }
         proc.running = true;
         Qt.createQmlObject('import QtQuick; Timer { interval: 140; running: true; onTriggered: refreshProc.running = true }', clipboardPopup);
+    }
+
+    FloatingWindowState {
+        id: windowState
+        windowTitle: "Clipboard"
+        kind: "clipboard"
+        active: clipboardPopup.isOpen
     }
 
     Rectangle {
@@ -253,7 +268,7 @@ FloatingWindow {
                     }
                     iconSource: "assets/icons/close.svg"
                     visibleButton: true
-                    onClicked: clipboardPopup.isOpen = false
+                    onClicked: clipboardPopup.closeClipboard()
                 }
             }
 
