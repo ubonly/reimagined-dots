@@ -1456,9 +1456,9 @@ FloatingWindow {
                                              }
                                          }
 
-                                         // SECTION 3: Extra Features
+                                         // SECTION 3: Advanced customization
                                          Text {
-                                             text: "Extra features"
+                                             text: "Advanced customization"
                                              font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                              color: settingsRoot.activeItem
                                              Layout.leftMargin: 12; Layout.topMargin: 8
@@ -1480,7 +1480,7 @@ FloatingWindow {
 
                                                  SettingsRow {
                                                      iconSource: "assets/icons/tune.svg"
-                                                     title: "Extra features"
+                                                     title: "Advanced customization"
                                                      subtitle: settingsRoot.extraFeaturesEnabled
                                                                ? "Random wallpapers, icon tinting, and palette selection"
                                                                : "Uses automatic wallpaper color generation"

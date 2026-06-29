@@ -463,16 +463,6 @@ ShellRoot {
                         visible: root.dockLauncherIconMode === "distro" && distroLogo.status === Image.Ready
                     }
 
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 26
-                        height: 26
-                        radius: 13
-                        color: Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.20)
-                        visible: root.dockLauncherIconMode === "distro" && distroLogo.status === Image.Ready
-                        z: -1
-                    }
-
                         MouseArea {
                             id: launcherBtnArea
                             anchors.fill: parent
