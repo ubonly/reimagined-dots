@@ -24,8 +24,8 @@ Item {
     readonly property bool   hasWindows:  windowClass !== ""
     readonly property bool   hasResolvedIcon: iconPath.length > 0
 
-    implicitWidth:  54
-    implicitHeight: 54
+    implicitWidth:  50
+    implicitHeight: 50
 
     // ── ПУСТО: точка ─────────────────────────────────────────────────────
     Rectangle {
@@ -43,17 +43,17 @@ Item {
 
     // ── ЕСТЬ ОКНО: иконка ────────────────────────────────────────────────
     Item {
+        width: parent.width
+        height: parent.height
         anchors.centerIn: parent
         visible: root.hasWindows
 
         Rectangle {
             anchors.centerIn: parent
-            width:  root.isFocused ? 46 : (mouse.containsMouse ? 42 : 40)
+            width:  mouse.containsMouse ? 38 : 36
             height: width
             radius: width / 2
-            color:  root.isFocused
-                    ? Theme.dockPillHover
-                    : (mouse.containsMouse ? Theme.dockPill : "transparent")
+            color: "transparent"
             border.color: "transparent"
             border.width: 0
             Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -64,7 +64,7 @@ Item {
         Image {
             id: iconImg
             anchors.centerIn: parent
-            width:  root.isFocused ? 30 : 28
+            width:  root.isFocused ? 29 : 27
             height: width
 
             source: root.hasResolvedIcon ? ("file://" + root.iconPath) : "assets/icons/apps.svg"
@@ -102,6 +102,22 @@ Item {
             visible: opacity > 0.0
             scale: iconImg.scale
             Behavior on opacity { NumberAnimation { duration: 160 } }
+        }
+
+        Rectangle {
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                bottom: parent.bottom
+                bottomMargin: 5
+            }
+            width: root.isFocused ? 18 : 0
+            height: 3
+            radius: 2
+            color: Qt.rgba(Theme.colorOnSurface.r, Theme.colorOnSurface.g, Theme.colorOnSurface.b, 0.96)
+            opacity: root.isFocused ? 1.0 : 0.0
+            z: 5
+            Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: 140 } }
         }
     }
 

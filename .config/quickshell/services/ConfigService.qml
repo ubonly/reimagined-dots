@@ -58,6 +58,7 @@ Singleton {
             property bool dockTransparencyEnabled: false
             property real dockOpacity: 0.85
             property bool dockIconFillEnabled: false
+            property string dockLauncherIconMode: "google"
             property string konachanTags: ""
             property bool wallpaperUpscaleEnabled: false
             property int wallpaperUpscaleFactor: 2

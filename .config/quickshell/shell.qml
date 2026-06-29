@@ -17,11 +17,13 @@ ShellRoot {
     property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
+    property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property string effectiveDockStyle: dockStyle === "square" ? "square" : "rounded"
     readonly property real effectiveDockOpacity: 1.0
-    readonly property int dockPanelHeight: 60
-    readonly property int dockTopRadius: effectiveDockStyle === "square" ? 0 : 30
+    readonly property int dockPanelHeight: 52
+    readonly property int dockTopRadius: effectiveDockStyle === "square" ? 0 : 26
     property bool dndMode: ConfigService.ready ? ConfigService.values.dnd : false
+    property string distroLogoName: ""
 
     property string kbLayout: "US"
 
@@ -60,6 +62,18 @@ ShellRoot {
         stdout: SplitParser {
             onRead: function(line) {
                 root.updateKbLayout(line.trim());
+            }
+        }
+    }
+
+    Process {
+        id: distroLogoProc
+        command: ["bash", "-lc", "source /etc/os-release 2>/dev/null || true; printf '%s\\n' \"${LOGO:-${ID:-linux}}\""]
+        running: true
+        stdout: SplitParser {
+            onRead: function(line) {
+                var logo = line.trim();
+                root.distroLogoName = logo;
             }
         }
     }
@@ -415,7 +429,7 @@ ShellRoot {
                         left: parent.left; leftMargin: 12
                         verticalCenter: parent.verticalCenter
                     }
-                    width: 42; height: 42; radius: 21
+                    width: 38; height: 38; radius: 19
                     color: (appLauncherInst && appLauncherInst.isOpen) || launcherBtnArea.containsMouse
                         ? Theme.dockPillHover
                         : Theme.dockPill
@@ -424,8 +438,21 @@ ShellRoot {
                     Text {
                         anchors.centerIn: parent
                         text: "G"
-                        font { pixelSize: 18; family: "Google Sans"; weight: Font.Bold }
+                        font { pixelSize: 17; family: "Google Sans"; weight: Font.Bold }
                         color: Theme.dockText
+                        visible: root.dockLauncherIconMode !== "distro" || distroLogo.status !== Image.Ready
+                    }
+
+                    Image {
+                        id: distroLogo
+                        anchors.centerIn: parent
+                        width: 22
+                        height: 22
+                        source: root.dockLauncherIconMode === "distro" && root.distroLogoName.length > 0 ? ("image://icon/" + root.distroLogoName) : ""
+                        sourceSize: Qt.size(44, 44)
+                        smooth: true
+                        mipmap: true
+                        visible: root.dockLauncherIconMode === "distro" && status === Image.Ready
                     }
 
                         MouseArea {
@@ -537,7 +564,7 @@ ShellRoot {
 
                     // ── 0. Media Pill ────────────────────────────
                     Rectangle {
-                        width: 38; height: 38; radius: 19
+                        width: 36; height: 36; radius: 18
                         anchors.verticalCenter: parent.verticalCenter
                         color: mediaPopupInst.isOpen ? Theme.dockActive : (mediaArea.containsMouse ? Theme.dockPillHover : Theme.dockPill)
                         border.color: Theme.dockBorder; border.width: 1

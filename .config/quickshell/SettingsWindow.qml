@@ -55,6 +55,7 @@ FloatingWindow {
     readonly property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
+    readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "scheme-tonal-spot"
 
     function updateDockStyle(style) {
@@ -68,6 +69,9 @@ FloatingWindow {
     }
     function updateDockIconFillEnabled(enabled) {
         if (ConfigService.ready) ConfigService.values.dockIconFillEnabled = enabled;
+    }
+    function updateDockLauncherIconMode(mode) {
+        if (ConfigService.ready) ConfigService.values.dockLauncherIconMode = mode === "distro" ? "distro" : "google";
     }
 
     function setThemeMode(mode) {
@@ -1037,6 +1041,65 @@ FloatingWindow {
                                                     showDivider: false
                                                     onSwitchToggled: {
                                                         settingsRoot.updateDockIconFillEnabled(!settingsRoot.dockIconFillEnabled)
+                                                    }
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                    implicitHeight: 78
+                                                    RowLayout {
+                                                        anchors { fill: parent; leftMargin: 66; rightMargin: 16; topMargin: 14; bottomMargin: 14 }
+                                                        spacing: 16
+
+                                                        ColumnLayout {
+                                                            spacing: 2
+                                                            Layout.alignment: Qt.AlignVCenter
+
+                                                            Text {
+                                                                text: "Launcher icon"
+                                                                font.pixelSize: 14; font.family: "Google Sans"
+                                                                color: settingsRoot.textPrimary
+                                                            }
+                                                            Text {
+                                                                text: "Choose the shelf launcher symbol"
+                                                                font.pixelSize: 12; font.family: "Google Sans"
+                                                                color: settingsRoot.textSecondary
+                                                            }
+                                                        }
+
+                                                        Item { Layout.fillWidth: true }
+
+                                                        RowLayout {
+                                                            spacing: 8
+
+                                                            Repeater {
+                                                                model: [
+                                                                    { name: "G", value: "google" },
+                                                                    { name: "Distro", value: "distro" }
+                                                                ]
+                                                                delegate: Rectangle {
+                                                                    property bool isActive: settingsRoot.dockLauncherIconMode === modelData.value
+                                                                    width: btnText.implicitWidth + 32
+                                                                    height: 36
+                                                                    radius: 18
+                                                                    color: isActive ? settingsRoot.textPrimary : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+
+                                                                    Text {
+                                                                        id: btnText
+                                                                        anchors.centerIn: parent
+                                                                        text: modelData.name
+                                                                        font.pixelSize: 13; font.family: "Google Sans"; font.weight: 500
+                                                                        color: isActive ? settingsRoot.bgColor : settingsRoot.textPrimary
+                                                                    }
+
+                                                                    MouseArea {
+                                                                        anchors.fill: parent
+                                                                        cursorShape: Qt.PointingHandCursor
+                                                                        onClicked: settingsRoot.updateDockLauncherIconMode(modelData.value)
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
 
