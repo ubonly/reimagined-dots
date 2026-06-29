@@ -16,7 +16,8 @@ ShellRoot {
     property string dockStyle: ConfigService.ready ? ConfigService.values.dockStyle : "rounded"
     property bool dockTransparencyEnabled: ConfigService.ready ? ConfigService.values.dockTransparencyEnabled : false
     property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
-    property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
+    property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
+    property bool dockIconFillEnabled: ConfigService.ready ? (ConfigService.values.extraFeaturesEnabled && ConfigService.values.dockIconFillEnabled) : false
     property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property string effectiveDockStyle: dockStyle === "square" ? "square" : "rounded"
     readonly property real effectiveDockOpacity: 1.0

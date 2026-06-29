@@ -40,7 +40,12 @@ if [ -n "$SCHEME" ]; then
     write_config_val "matugenScheme" "\"$SCHEME\""
 fi
 
-PALETTE_TYPE=$(read_config_val "matugenScheme" "scheme-tonal-spot")
+EXTRA_FEATURES=$(read_config_val "extraFeaturesEnabled" "false")
+PALETTE_TYPE=$(read_config_val "matugenScheme" "auto")
+if [ "${EXTRA_FEATURES,,}" != "true" ]; then
+    PALETTE_TYPE="auto"
+    write_config_val "matugenScheme" "\"auto\""
+fi
 TYPE_ARGS=()
 if [ "$PALETTE_TYPE" != "auto" ] && [ -n "$PALETTE_TYPE" ]; then
     TYPE_ARGS+=("-t" "$PALETTE_TYPE")

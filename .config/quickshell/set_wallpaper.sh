@@ -10,15 +10,17 @@ VIDEO_THUMBNAILS_DIR="$HOME/.cache/quickshell/video-thumbnails"
 # Load config values in a single jq call
 UPSCALE_ENABLED="false"
 UPSCALE_FACTOR="2"
-MATUGEN_SCHEME="scheme-tonal-spot"
+MATUGEN_SCHEME="auto"
 THEME_MODE="dark"
+EXTRA_FEATURES="false"
 
 if [ -f "$CONFIG_FILE" ]; then
     eval $(jq -r '
       "UPSCALE_ENABLED=" + (.wallpaperUpscaleEnabled // "false" | tostring) +
       "; UPSCALE_FACTOR=" + (.wallpaperUpscaleFactor // "2" | tostring) +
-      "; MATUGEN_SCHEME=" + (.matugenScheme // "scheme-tonal-spot" | tostring) +
-      "; THEME_MODE=" + (.themeMode // "dark" | tostring)
+      "; MATUGEN_SCHEME=" + (.matugenScheme // "auto" | tostring) +
+      "; THEME_MODE=" + (.themeMode // "dark" | tostring) +
+      "; EXTRA_FEATURES=" + (.extraFeaturesEnabled // "false" | tostring)
     ' "$CONFIG_FILE" 2>/dev/null)
 fi
 
@@ -191,6 +193,9 @@ fi
 # Run matugen color generation using COLOR_GEN_TARGET in the background
 if command -v matugen >/dev/null 2>&1; then
     PALETTE_TYPE="$MATUGEN_SCHEME"
+    if [ "${EXTRA_FEATURES,,}" != "true" ]; then
+        PALETTE_TYPE="auto"
+    fi
     TYPE_ARGS=()
     if [ "$PALETTE_TYPE" != "auto" ] && [ -n "$PALETTE_TYPE" ]; then
         TYPE_ARGS+=("-t" "$PALETTE_TYPE")

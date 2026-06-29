@@ -56,7 +56,8 @@ FloatingWindow {
     readonly property real dockOpacity: ConfigService.ready ? ConfigService.values.dockOpacity : 0.85
     readonly property bool dockIconFillEnabled: ConfigService.ready ? ConfigService.values.dockIconFillEnabled : false
     readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
-    readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "scheme-tonal-spot"
+    readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
+    readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -68,7 +69,7 @@ FloatingWindow {
         if (ConfigService.ready) ConfigService.values.dockOpacity = Math.max(0.2, Math.min(1.0, value));
     }
     function updateDockIconFillEnabled(enabled) {
-        if (ConfigService.ready) ConfigService.values.dockIconFillEnabled = enabled;
+        if (ConfigService.ready && settingsRoot.extraFeaturesEnabled) ConfigService.values.dockIconFillEnabled = enabled;
     }
     function updateDockLauncherIconMode(mode) {
         if (ConfigService.ready) ConfigService.values.dockLauncherIconMode = mode === "distro" ? "distro" : "google";
@@ -77,14 +78,26 @@ FloatingWindow {
     function setThemeMode(mode) {
         if (ConfigService.ready) {
             ConfigService.values.themeMode = mode;
-            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", mode, settingsRoot.matugenScheme]);
+            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", mode, settingsRoot.extraFeaturesEnabled ? settingsRoot.matugenScheme : "auto"]);
         }
     }
 
     function setMatugenScheme(scheme) {
-        if (ConfigService.ready) {
+        if (ConfigService.ready && settingsRoot.extraFeaturesEnabled) {
             ConfigService.values.matugenScheme = scheme;
             Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", settingsRoot.themeMode, scheme]);
+        }
+    }
+
+    function updateExtraFeaturesEnabled(enabled) {
+        if (!ConfigService.ready)
+            return;
+
+        ConfigService.values.extraFeaturesEnabled = enabled;
+        if (!enabled) {
+            ConfigService.values.matugenScheme = "auto";
+            ConfigService.values.dockIconFillEnabled = false;
+            Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", settingsRoot.themeMode, "auto"]);
         }
     }
 
@@ -820,12 +833,14 @@ FloatingWindow {
                                                     Layout.leftMargin: 16; Layout.rightMargin: 16
                                                     height: 1
                                                     color: settingsRoot.dividerColor
+                                                    visible: settingsRoot.extraFeaturesEnabled
                                                 }
 
                                                 ColumnLayout {
                                                     Layout.fillWidth: true
                                                     Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.topMargin: 8; Layout.bottomMargin: 16
                                                     spacing: 12
+                                                    visible: settingsRoot.extraFeaturesEnabled
 
                                                     Text {
                                                         text: "Matugen color scheme"
@@ -883,6 +898,7 @@ FloatingWindow {
                                                     Layout.leftMargin: 16; Layout.rightMargin: 16
                                                     height: 1
                                                     color: settingsRoot.dividerColor
+                                                    visible: settingsRoot.extraFeaturesEnabled
                                                 }
 
                                                 SettingsRow {
@@ -891,6 +907,7 @@ FloatingWindow {
                                                     subtitle: "Downloads a random anime wallpaper"
                                                     hasChevron: true
                                                     showDivider: true
+                                                    visible: settingsRoot.extraFeaturesEnabled
                                                     onClicked: {
                                                         Quickshell.execDetached(["bash", ConfigService.configDir + "/random_konachan.sh"])
                                                     }
@@ -901,6 +918,7 @@ FloatingWindow {
                                                     subtitle: "Downloads a random osu! seasonal background"
                                                     hasChevron: true
                                                     showDivider: false
+                                                    visible: settingsRoot.extraFeaturesEnabled
                                                     onClicked: {
                                                         Quickshell.execDetached(["bash", ConfigService.configDir + "/random_osu.sh"])
                                                     }
@@ -1039,6 +1057,7 @@ FloatingWindow {
                                                     hasSwitch: true
                                                     switchVal: settingsRoot.dockIconFillEnabled
                                                     showDivider: false
+                                                    visible: settingsRoot.extraFeaturesEnabled
                                                     onSwitchToggled: {
                                                         settingsRoot.updateDockIconFillEnabled(!settingsRoot.dockIconFillEnabled)
                                                     }
@@ -1433,7 +1452,45 @@ FloatingWindow {
                                                           font.pixelSize: 13; font.family: "Google Sans"; font.weight: 600
                                                           color: settingsRoot.activeItem
                                                       }
-                                                  }
+                                                 }
+                                             }
+                                         }
+
+                                         // SECTION 3: Extra Features
+                                         Text {
+                                             text: "Extra features"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 8
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: extraFeaturesCol.implicitHeight
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: extraFeaturesCol
+                                                 anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+                                                 spacing: 0
+
+                                                 SettingsRow {
+                                                     iconSource: "assets/icons/tune.svg"
+                                                     title: "Extra features"
+                                                     subtitle: settingsRoot.extraFeaturesEnabled
+                                                               ? "Random wallpapers, icon tinting, and palette selection"
+                                                               : "Uses automatic wallpaper color generation"
+                                                     hasSwitch: true
+                                                     switchVal: settingsRoot.extraFeaturesEnabled
+                                                     showDivider: false
+                                                     onSwitchToggled: {
+                                                         settingsRoot.updateExtraFeaturesEnabled(!settingsRoot.extraFeaturesEnabled)
+                                                     }
+                                                 }
                                              }
                                          }
                                      }

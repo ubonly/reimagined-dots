@@ -59,13 +59,14 @@ Singleton {
             property real dockOpacity: 0.85
             property bool dockIconFillEnabled: false
             property string dockLauncherIconMode: "google"
+            property bool extraFeaturesEnabled: false
             property string konachanTags: ""
             property bool wallpaperUpscaleEnabled: false
             property int wallpaperUpscaleFactor: 2
             property bool dnd: false
             property string wallpaperPath: ""
             property string wallpaperState: ""
-            property string matugenScheme: "scheme-tonal-spot"
+            property string matugenScheme: "auto"
             property bool use24Hour: true
             property int settingsPage: 3
             property real settingsWindowX: -1
