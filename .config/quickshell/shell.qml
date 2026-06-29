@@ -452,7 +452,24 @@ ShellRoot {
                         sourceSize: Qt.size(44, 44)
                         smooth: true
                         mipmap: true
-                        visible: root.dockLauncherIconMode === "distro" && status === Image.Ready
+                        visible: false
+                    }
+
+                    ColorOverlay {
+                        anchors.fill: distroLogo
+                        source: distroLogo
+                        color: Theme.primary
+                        visible: root.dockLauncherIconMode === "distro" && distroLogo.status === Image.Ready
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 26
+                        height: 26
+                        radius: 13
+                        color: Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.20)
+                        visible: root.dockLauncherIconMode === "distro" && distroLogo.status === Image.Ready
+                        z: -1
                     }
 
                         MouseArea {
