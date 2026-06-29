@@ -108,7 +108,7 @@ Item {
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 bottom: parent.bottom
-                bottomMargin: 5
+                bottomMargin: 1
             }
             width: root.isFocused ? 18 : 0
             height: 3

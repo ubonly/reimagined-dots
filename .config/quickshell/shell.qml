@@ -440,7 +440,7 @@ ShellRoot {
                         anchors.centerIn: parent
                         text: "G"
                         font { pixelSize: 17; family: "Google Sans"; weight: Font.Bold }
-                        color: Theme.dockText
+                        color: root.dockIconFillEnabled ? Theme.primary : Theme.dockText
                         visible: root.dockLauncherIconMode !== "distro" || distroLogo.status !== Image.Ready
                     }
 
@@ -453,14 +453,18 @@ ShellRoot {
                         sourceSize: Qt.size(44, 44)
                         smooth: true
                         mipmap: true
-                        visible: false
+                        visible: root.dockLauncherIconMode === "distro"
+                                 && distroLogo.status === Image.Ready
+                                 && !root.dockIconFillEnabled
                     }
 
                     ColorOverlay {
                         anchors.fill: distroLogo
                         source: distroLogo
                         color: Theme.primary
-                        visible: root.dockLauncherIconMode === "distro" && distroLogo.status === Image.Ready
+                        visible: root.dockLauncherIconMode === "distro"
+                                 && distroLogo.status === Image.Ready
+                                 && root.dockIconFillEnabled
                     }
 
                         MouseArea {

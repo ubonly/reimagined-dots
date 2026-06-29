@@ -155,19 +155,21 @@ FloatingWindow {
         property string storageUsed: "0 GB"
         property string storageTotal: "0 GB"
         property string storageFree: "0 GB"
+        property string storageFs: "Unknown"
         property real storagePercent: 0.0
 
-        command: ["bash", "-c", "df -h / | tail -n 1 | awk '{print $3 \"|\" $2 \"|\" $4 \"|\" $5}'"]
-        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        command: ["bash", "-c", "df -hT /home | tail -n 1 | awk '{print $4 \"|\" $3 \"|\" $5 \"|\" $6 \"|\" $2}'"]
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 7
         stdout: SplitParser {
             onRead: function(line) {
                 var parts = line.trim().split("|");
-                if (parts.length >= 4) {
+                if (parts.length >= 5) {
                     storageQueryProc.storageUsed = parts[0];
                     storageQueryProc.storageTotal = parts[1];
                     storageQueryProc.storageFree = parts[2];
                     var pct = parseFloat(parts[3].replace("%", "")) / 100.0;
                     storageQueryProc.storagePercent = isNaN(pct) ? 0.0 : pct;
+                    storageQueryProc.storageFs = parts[4];
                 }
             }
         }
@@ -175,7 +177,7 @@ FloatingWindow {
 
     Timer {
         interval: 10000; repeat: true
-        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 6
+        running: settingsRoot.settingsVisible && settingsRoot.currentPage === 7
         triggeredOnStart: true
         onTriggered: storageQueryProc.running = true
     }
@@ -689,8 +691,8 @@ FloatingWindow {
                         NavItem { navIconSource: "assets/icons/wallpaper.svg";          navTitle: "Wallpaper and style"; navSub: "Dark theme, screen saver";     navIndex: 3 }
                         NavItem { navIconSource: "assets/icons/apps.svg";               navTitle: "Dock";                navSub: "Shelf style and behavior";     navIndex: 4 }
                         NavItem { navIconSource: "assets/icons/accessibility.svg";      navTitle: "Accessibility";       navSub: "Screen reader, magnification"; navIndex: 5 }
-                        NavItem { navIconSource: "assets/icons/build.svg";              navTitle: "System preferences";  navSub: "Storage, power, language";     navIndex: 6 }
-                        NavItem { navIconSource: "assets/icons/info.svg";               navTitle: "About your system";   navSub: "Version, distro, config";      navIndex: 7 }
+                        NavItem { navIconSource: "assets/icons/build.svg";              navTitle: "System preferences";  navSub: "Power, language, features";    navIndex: 6 }
+                        NavItem { navIconSource: "assets/icons/info.svg";               navTitle: "About your system";   navSub: "Version, storage, config";     navIndex: 7 }
 
                         Item { Layout.fillHeight: true }
                     }
@@ -1208,9 +1210,9 @@ FloatingWindow {
                                          Layout.fillWidth: true
                                          spacing: 12
 
-                                         // SECTION 1: Storage and Power
+                                         // SECTION 1: Power
                                          Text {
-                                             text: "Storage and power"
+                                             text: "Power"
                                              font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                              color: settingsRoot.activeItem
                                              Layout.leftMargin: 12; Layout.topMargin: 4
@@ -1230,48 +1232,7 @@ FloatingWindow {
                                                  anchors { fill: parent; margins: 16 }
                                                  spacing: 16
 
-                                                 // Item 1: Storage Usage
-                                                 ColumnLayout {
-                                                     Layout.fillWidth: true
-                                                     spacing: 8
-
-                                                     RowLayout {
-                                                         Layout.fillWidth: true
-                                                         Text {
-                                                             text: "Storage management"
-                                                             font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
-                                                             color: settingsRoot.textPrimary
-                                                         }
-                                                         Item { Layout.fillWidth: true }
-                                                         Text {
-                                                             text: storageQueryProc.storageUsed + " used of " + storageQueryProc.storageTotal + " (" + storageQueryProc.storageFree + " free)"
-                                                             font.pixelSize: 12; font.family: "Google Sans"
-                                                             color: settingsRoot.textSecondary
-                                                         }
-                                                     }
-
-                                                     // Storage Bar
-                                                     Rectangle {
-                                                         Layout.fillWidth: true
-                                                         height: 8
-                                                         radius: 4
-                                                         color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
-
-                                                         Rectangle {
-                                                             width: parent.width * storageQueryProc.storagePercent
-                                                             height: parent.height
-                                                             radius: parent.radius
-                                                             color: settingsRoot.activeItem
-                                                         }
-                                                     }
-                                                 }
-
-                                                 Rectangle {
-                                                     Layout.fillWidth: true; height: 1
-                                                     color: settingsRoot.dividerColor
-                                                 }
-
-                                                 // Item 2: Power profile selection
+                                                 // Power profile selection
                                                  RowLayout {
                                                      Layout.fillWidth: true
                                                      spacing: 12
@@ -1526,6 +1487,73 @@ FloatingWindow {
                                                  InfoRow { label: "Kernel"; value: systemInfoQuery.kernel }
                                                  InfoRow { label: "Hyprland"; value: systemInfoQuery.hyprlandVersion }
                                                  InfoRow { label: "QuickShell"; value: systemInfoQuery.quickshellVersion }
+                                             }
+                                         }
+
+                                         Text {
+                                             text: "Storage"
+                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                             color: settingsRoot.activeItem
+                                             Layout.leftMargin: 12; Layout.topMargin: 8
+                                         }
+
+                                         Rectangle {
+                                             Layout.fillWidth: true
+                                             Layout.leftMargin: 10; Layout.rightMargin: 10
+                                             implicitHeight: aboutStorageCol.implicitHeight + 32
+                                             radius: 16
+                                             color: Qt.rgba(1,1,1,0.03)
+                                             border.color: Qt.rgba(1,1,1,0.05)
+                                             border.width: 1
+
+                                             ColumnLayout {
+                                                 id: aboutStorageCol
+                                                 anchors { fill: parent; margins: 16 }
+                                                 spacing: 8
+
+                                                 RowLayout {
+                                                     Layout.fillWidth: true
+                                                     Text {
+                                                         text: "Home storage"
+                                                         font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                         color: settingsRoot.textPrimary
+                                                     }
+                                                     Item { Layout.fillWidth: true }
+                                                     Text {
+                                                         text: storageQueryProc.storageUsed + " used of " + storageQueryProc.storageTotal
+                                                         font.pixelSize: 12; font.family: "Google Sans"
+                                                         color: settingsRoot.textSecondary
+                                                     }
+                                                 }
+
+                                                 Rectangle {
+                                                     Layout.fillWidth: true
+                                                     height: 8
+                                                     radius: 4
+                                                     color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
+
+                                                     Rectangle {
+                                                         width: parent.width * storageQueryProc.storagePercent
+                                                         height: parent.height
+                                                         radius: parent.radius
+                                                         color: settingsRoot.activeItem
+                                                     }
+                                                 }
+
+                                                 RowLayout {
+                                                     Layout.fillWidth: true
+                                                     Text {
+                                                         text: storageQueryProc.storageFree + " free"
+                                                         font.pixelSize: 12; font.family: "Google Sans"
+                                                         color: settingsRoot.textSecondary
+                                                     }
+                                                     Item { Layout.fillWidth: true }
+                                                     Text {
+                                                         text: "File system: " + storageQueryProc.storageFs
+                                                         font.pixelSize: 12; font.family: "Google Sans"; font.weight: Font.Medium
+                                                         color: settingsRoot.textSecondary
+                                                     }
+                                                 }
                                              }
                                          }
 
