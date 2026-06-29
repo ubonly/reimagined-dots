@@ -646,230 +646,221 @@ PanelWindow {
                 }
             }
 
-            // app content. The main app list uses GridView so only visible
-            // delegates are created; the old Flickable+Repeater built every app
-            // at once and made opening/scrolling feel capped and uneven.
+            // ── Fixed recent apps header ─────────────────────────────
             Item {
-                id: appContent
+                id: recentSection
                 anchors {
                     top: searchBar.bottom; topMargin: 12
+                    left: parent.left; leftMargin: 24
+                    right: parent.right; rightMargin: 24
+                }
+                height: visible ? 142 : 0
+                visible: launcher.searchText === "" && launcher.recentApps.length > 0
+                opacity: visible ? 1.0 : 0.0
+                z: 2
+
+                Text {
+                    id: recentLabel
+                    anchors { top: parent.top; left: parent.left }
+                    text: "Recently used"
+                    color: Qt.rgba(1, 1, 1, 0.45)
+                    font { pixelSize: 11; family: "Google Sans"; weight: Font.Medium; letterSpacing: 0.5 }
+                }
+
+                Row {
+                    id: recentRow
+                    anchors { top: recentLabel.bottom; topMargin: 8; left: parent.left; right: parent.right }
+                    spacing: 4
+
+                    Repeater {
+                        model: launcher.recentApps
+
+                        Item {
+                            id: recentCell
+                            property var rapp: launcher.recentApps[index]
+
+                            width: (recentRow.width - 4 * 4) / 5
+                            height: 110
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 16
+                                color: recentMouse.containsMouse ? launcher.hoverBg : "transparent"
+                                Behavior on color { ColorAnimation { duration: 90 } }
+                            }
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 8
+
+                                Item {
+                                    width: 56; height: 56
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: 28
+                                        color: Qt.rgba(1, 1, 1, 0.06)
+                                        visible: recentIcon.status !== Image.Ready
+                                    }
+
+                                    Image {
+                                        id: recentIcon
+                                        anchors.centerIn: parent
+                                        width: 44; height: 44
+                                        sourceSize.width: 44
+                                        sourceSize.height: 44
+                                        source: {
+                                            if (!recentCell.rapp) return "image://icon/application-x-executable";
+                                            var path = recentCell.rapp.iconPath;
+                                            if (path && path.length > 0) return "file://" + path;
+                                            var icon = recentCell.rapp.icon || "application-x-executable";
+                                            if (icon.startsWith("/")) return "file://" + icon;
+                                            return "image://icon/" + icon;
+                                        }
+                                        asynchronous: true
+                                        cache: true
+                                        fillMode: Image.PreserveAspectFit
+                                    }
+                                }
+
+                                Text {
+                                    width: Math.min(100, recentCell.width - 12)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: recentCell.rapp ? recentCell.rapp.name : ""
+                                    color: launcher.textPrimary
+                                    font { pixelSize: 11; family: "Google Sans" }
+                                    elide: Text.ElideRight
+                                    maximumLineCount: 2
+                                    wrapMode: Text.Wrap
+                                    horizontalAlignment: Text.AlignHCenter
+                                    lineHeight: 1.15
+                                }
+                            }
+
+                            MouseArea {
+                                id: recentMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: launcher.launchApp(recentCell.rapp.exec)
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    anchors { top: recentRow.bottom; topMargin: 12; left: parent.left; right: parent.right }
+                    height: 1
+                    color: Qt.rgba(1, 1, 1, 0.06)
+                }
+            }
+
+            // Main app grid. This is the only scrollable launcher area.
+            GridView {
+                id: appScroll
+                z: 1
+                anchors {
+                    top: recentSection.visible ? recentSection.bottom : searchBar.bottom
+                    topMargin: recentSection.visible ? 8 : 12
                     left: parent.left; leftMargin: 24
                     right: parent.right; rightMargin: 24
                     bottom: parent.bottom; bottomMargin: 24
                 }
                 clip: true
+                model: launcher.filteredApps
+                cellWidth: width / columns
+                cellHeight: 110
+                currentIndex: launcher.activeIndex
+                boundsBehavior: Flickable.DragOverBounds
+                boundsMovement: Flickable.FollowBoundsBehavior
+                flickDeceleration: 3600
+                maximumFlickVelocity: 5200
+                cacheBuffer: cellHeight * 4
+                highlightMoveDuration: 110
+                highlightRangeMode: GridView.NoHighlightRange
 
-                // ── Fixed recent apps header ─────────────────────────────
-                Item {
-                    id: recentSection
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    height: visible ? 142 : 0
-                    visible: launcher.searchText === "" && launcher.recentApps.length > 0
-                    opacity: visible ? 1.0 : 0.0
-                    z: 2
+                readonly property int columns: 5
 
-                    Text {
-                        id: recentLabel
-                        anchors { top: parent.top; left: parent.left }
-                        text: "Recently used"
-                        color: Qt.rgba(1, 1, 1, 0.45)
-                        font { pixelSize: 11; family: "Google Sans"; weight: Font.Medium; letterSpacing: 0.5 }
-                    }
-
-                    Row {
-                        id: recentRow
-                        anchors { top: recentLabel.bottom; topMargin: 8; left: parent.left; right: parent.right }
-                        spacing: 4
-
-                        Repeater {
-                            model: launcher.recentApps
-
-                            Item {
-                                id: recentCell
-                                property var rapp: launcher.recentApps[index]
-
-                                width: (recentRow.width - 4 * 4) / 5
-                                height: 110
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 16
-                                    color: recentMouse.containsMouse ? launcher.hoverBg : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 90 } }
-                                }
-
-                                Column {
-                                    anchors.centerIn: parent
-                                    spacing: 8
-
-                                    Item {
-                                        width: 56; height: 56
-                                        anchors.horizontalCenter: parent.horizontalCenter
-
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: 28
-                                            color: Qt.rgba(1, 1, 1, 0.06)
-                                            visible: recentIcon.status !== Image.Ready
-                                        }
-
-                                        Image {
-                                            id: recentIcon
-                                            anchors.centerIn: parent
-                                            width: 44; height: 44
-                                            sourceSize.width: 44
-                                            sourceSize.height: 44
-                                            source: {
-                                                if (!recentCell.rapp) return "image://icon/application-x-executable";
-                                                var path = recentCell.rapp.iconPath;
-                                                if (path && path.length > 0) return "file://" + path;
-                                                var icon = recentCell.rapp.icon || "application-x-executable";
-                                                if (icon.startsWith("/")) return "file://" + icon;
-                                                return "image://icon/" + icon;
-                                            }
-                                            asynchronous: true
-                                            cache: true
-                                            fillMode: Image.PreserveAspectFit
-                                        }
-                                    }
-
-                                    Text {
-                                        width: Math.min(100, recentCell.width - 12)
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: recentCell.rapp ? recentCell.rapp.name : ""
-                                        color: launcher.textPrimary
-                                        font { pixelSize: 11; family: "Google Sans" }
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 2
-                                        wrapMode: Text.Wrap
-                                        horizontalAlignment: Text.AlignHCenter
-                                        lineHeight: 1.15
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: recentMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: launcher.launchApp(recentCell.rapp.exec)
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors { top: recentRow.bottom; topMargin: 12; left: parent.left; right: parent.right }
-                        height: 1
-                        color: Qt.rgba(1, 1, 1, 0.06)
-                    }
+                function ensureActiveVisible() {
+                    if (launcher.filteredApps.length === 0) return
+                    positionViewAtIndex(launcher.activeIndex, GridView.Contain)
                 }
 
-                GridView {
-                    id: appScroll
-                    z: 1
-                    anchors {
-                        top: recentSection.visible ? recentSection.bottom : parent.top
-                        topMargin: recentSection.visible ? 8 : 0
-                        left: parent.left
-                        right: parent.right
-                        bottom: parent.bottom
-                    }
-                    clip: true
-                    model: launcher.filteredApps
-                    cellWidth: width / columns
-                    cellHeight: 110
-                    currentIndex: launcher.activeIndex
-                    boundsBehavior: Flickable.DragOverBounds
-                    boundsMovement: Flickable.FollowBoundsBehavior
-                    flickDeceleration: 3600
-                    maximumFlickVelocity: 5200
-                    cacheBuffer: cellHeight * 4
-                    highlightMoveDuration: 110
-                    highlightRangeMode: GridView.NoHighlightRange
+                delegate: Item {
+                    id: cell
+                    width: appScroll.cellWidth
+                    height: appScroll.cellHeight
 
-                    readonly property int columns: 5
+                    property var app: modelData
 
-                    function ensureActiveVisible() {
-                        if (launcher.filteredApps.length === 0) return
-                        positionViewAtIndex(launcher.activeIndex, GridView.Contain)
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 16
+                        color: (cellMouse.containsMouse || index === launcher.activeIndex)
+                               ? launcher.hoverBg : "transparent"
+                        border.color: (index === launcher.activeIndex) ? Qt.rgba(1, 1, 1, 0.15) : "transparent"
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 80 } }
                     }
 
-                    delegate: Item {
-                        id: cell
-                        width: appScroll.cellWidth
-                        height: appScroll.cellHeight
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 8
 
-                        property var app: modelData
+                        Item {
+                            width: 56; height: 56
+                            anchors.horizontalCenter: parent.horizontalCenter
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 16
-                            color: (cellMouse.containsMouse || index === launcher.activeIndex)
-                                   ? launcher.hoverBg : "transparent"
-                            border.color: (index === launcher.activeIndex) ? Qt.rgba(1, 1, 1, 0.15) : "transparent"
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: 80 } }
-                        }
-
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 8
-
-                            Item {
-                                width: 56; height: 56
-                                anchors.horizontalCenter: parent.horizontalCenter
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 28
-                                    color: Qt.rgba(1, 1, 1, 0.06)
-                                    visible: appIcon.status !== Image.Ready
-                                }
-
-                                Image {
-                                    id: appIcon
-                                    anchors.centerIn: parent
-                                    width: 44; height: 44
-                                    sourceSize.width: 44
-                                    sourceSize.height: 44
-
-                                    source: {
-                                        if (!cell.app) return "image://icon/application-x-executable";
-                                        var path = cell.app.iconPath;
-                                        if (path && path.length > 0) return "file://" + path;
-                                        var icon = cell.app.icon || "application-x-executable";
-                                        if (icon.startsWith("/")) return "file://" + icon;
-                                        return "image://icon/" + icon;
-                                    }
-
-                                    asynchronous: true
-                                    cache: true
-                                    fillMode: Image.PreserveAspectFit
-                                }
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 28
+                                color: Qt.rgba(1, 1, 1, 0.06)
+                                visible: appIcon.status !== Image.Ready
                             }
 
-                            Text {
-                                width: Math.min(100, cell.width - 12)
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: cell.app ? cell.app.name : ""
-                                color: launcher.textPrimary
-                                font { pixelSize: 11; family: "Google Sans" }
-                                elide: Text.ElideRight
-                                maximumLineCount: 2
-                                wrapMode: Text.Wrap
-                                horizontalAlignment: Text.AlignHCenter
-                                lineHeight: 1.15
+                            Image {
+                                id: appIcon
+                                anchors.centerIn: parent
+                                width: 44; height: 44
+                                sourceSize.width: 44
+                                sourceSize.height: 44
+
+                                source: {
+                                    if (!cell.app) return "image://icon/application-x-executable";
+                                    var path = cell.app.iconPath;
+                                    if (path && path.length > 0) return "file://" + path;
+                                    var icon = cell.app.icon || "application-x-executable";
+                                    if (icon.startsWith("/")) return "file://" + icon;
+                                    return "image://icon/" + icon;
+                                }
+
+                                asynchronous: true
+                                cache: true
+                                fillMode: Image.PreserveAspectFit
                             }
                         }
 
-                        MouseArea {
-                            id: cellMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: if (cell.app) launcher.launchApp(cell.app.exec)
+                        Text {
+                            width: Math.min(100, cell.width - 12)
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: cell.app ? cell.app.name : ""
+                            color: launcher.textPrimary
+                            font { pixelSize: 11; family: "Google Sans" }
+                            elide: Text.ElideRight
+                            maximumLineCount: 2
+                            wrapMode: Text.Wrap
+                            horizontalAlignment: Text.AlignHCenter
+                            lineHeight: 1.15
                         }
+                    }
+
+                    MouseArea {
+                        id: cellMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: if (cell.app) launcher.launchApp(cell.app.exec)
                     }
                 }
             }
