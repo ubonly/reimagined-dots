@@ -79,7 +79,7 @@ echo "Настройка Hyprland..."
 HYPR_DIR="$HOME/.config/hypr"
 mkdir -p "$HYPR_DIR"
 
-for conf in hyprland.conf hyprlock.conf; do
+for conf in hyprland.conf hyprlock.conf hypridle.conf lock.sh lock-status.sh; do
     SRC_CONF="$SCRIPT_DIR/.config/hypr/$conf"
     DEST_CONF="$HYPR_DIR/$conf"
     if [ -f "$SRC_CONF" ]; then
@@ -90,6 +90,9 @@ for conf in hyprland.conf hyprlock.conf; do
         fi
         echo "Копирование $conf из репозитория..."
         cp "$SRC_CONF" "$DEST_CONF"
+        case "$conf" in
+            *.sh) chmod +x "$DEST_CONF" ;;
+        esac
     fi
 done
 echo "Конфигурация Hyprland обновлена."

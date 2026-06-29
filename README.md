@@ -42,6 +42,7 @@ If you prefer to install things by hand, you will need:
 - `hyprshot`
 - `cliphist`
 - `hyprlock`
+- `hypridle`
 - `curl`
 - `zenity`
 - `matugen`
@@ -55,7 +56,7 @@ Almost all dependencies are available across other major Linux distributions. He
 #### Fedora
 Most core utilities can be installed via `dnf`:
 ```bash
-sudo dnf install jq bc python3-pillow NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+sudo dnf install jq bc python3-pillow NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock hypridle curl zenity hyprpaper
 ```
 * **Quickshell**: Build from source (`cargo install quickshell` or use Copr repo if available).
 * **Matugen**: Install via cargo (`cargo install matugen`) or download from Github releases.
@@ -64,7 +65,7 @@ sudo dnf install jq bc python3-pillow NetworkManager bluez wireplumber brightnes
 #### Debian / Ubuntu (Sid/Testing)
 Install core utilities via `apt`:
 ```bash
-sudo apt install jq bc python3-pillow network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+sudo apt install jq bc python3-pillow network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock hypridle curl zenity hyprpaper
 ```
 * **Quickshell & Matugen**: Build from source (cargo / github releases).
 
@@ -102,7 +103,7 @@ Add the following package names to your `environment.systemPackages` or Home Man
 * `pkgs.jq`, `pkgs.bc`, `pkgs.python3Packages.pillow`
 * `pkgs.brightnessctl`, `pkgs.libnotify`, `pkgs.psmisc`, `pkgs.procps`, `pkgs.xdg-utils`
 * `pkgs.grim`, `pkgs.ffmpeg`, `pkgs.wf-recorder`, `pkgs.wl-clipboard`
-* `pkgs.cliphist`, `pkgs.hyprlock`, `pkgs.curl`, `pkgs.zenity`
+* `pkgs.cliphist`, `pkgs.hyprlock`, `pkgs.hypridle`, `pkgs.curl`, `pkgs.zenity`
 * `pkgs.swww` or `pkgs.hyprpaper`
 * Enable bluetooth, networkmanager, and hyprland using their respective NixOS system options.
 

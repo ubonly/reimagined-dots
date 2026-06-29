@@ -787,7 +787,7 @@ PanelWindow {
                             { icon: "assets/icons/power-settings-new.svg", label: "Выключить",     cmd: "systemctl poweroff" },
                             { icon: "assets/icons/restart-alt.svg",       label: "Перезагрузить",  cmd: "systemctl reboot" },
                             { icon: "assets/icons/logout.svg",            label: "Выйти",          cmd: "hyprctl dispatch exit" },
-                            { icon: "assets/icons/lock-outline.svg",      label: "Заблокировать",  cmd: "hyprlock" }
+                            { icon: "assets/icons/lock-outline.svg",      label: "Заблокировать",  cmd: "~/.config/hypr/lock.sh" }
                         ]
 
                         Rectangle {

@@ -33,6 +33,7 @@
             wl-clipboard
             cliphist
             hyprlock
+            hypridle
             curl
             zenity
             hyprpaper
