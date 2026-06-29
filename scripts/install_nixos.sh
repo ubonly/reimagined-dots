@@ -51,7 +51,6 @@ cat << 'EOF'
     wl-clipboard
     cliphist
     hyprlock
-    hypridle
     curl
     zenity
     hyprpaper

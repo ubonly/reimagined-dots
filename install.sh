@@ -79,7 +79,7 @@ echo "Настройка Hyprland..."
 HYPR_DIR="$HOME/.config/hypr"
 mkdir -p "$HYPR_DIR"
 
-for conf in hyprland.conf hyprlock.conf hypridle.conf lock.sh lock-status.sh; do
+for conf in hyprland.conf hyprlock.conf lock.sh lock-status.sh; do
     SRC_CONF="$SCRIPT_DIR/.config/hypr/$conf"
     DEST_CONF="$HYPR_DIR/$conf"
     if [ -f "$SRC_CONF" ]; then
