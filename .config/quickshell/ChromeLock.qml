@@ -228,20 +228,13 @@ Scope {
 
         WlSessionLockSurface {
             id: lockSurface
-            color: "transparent"
+            color: Theme.bgColor
 
             Item {
                 id: content
                 anchors.fill: parent
                 focus: true
                 enabled: !root.unlockAnimating
-                opacity: root.unlockAnimating ? 0 : 1
-                scale: root.unlockAnimating ? 1.035 : 1
-                y: root.unlockAnimating ? -20 : 0
-
-                Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                Behavior on scale { NumberAnimation { duration: 340; easing.type: Easing.OutCubic } }
-                Behavior on y { NumberAnimation { duration: 340; easing.type: Easing.OutCubic } }
 
                 Component.onCompleted: forceActiveFocus()
 
@@ -281,13 +274,18 @@ Scope {
                     }
                 }
 
+                Rectangle {
+                    anchors.fill: parent
+                    color: Theme.bgColor
+                }
+
                 Image {
                     id: wallpaper
                     anchors.fill: parent
                     source: root.wallpaperUrl()
                     fillMode: Image.PreserveAspectCrop
                     smooth: true
-                    asynchronous: true
+                    asynchronous: false
                     visible: status === Image.Ready
                 }
 
@@ -318,9 +316,9 @@ Scope {
                 Item {
                     id: clockView
                     anchors.fill: parent
-                    opacity: root.passwordView ? 0 : 1
+                    opacity: root.unlockAnimating ? 0 : (root.passwordView ? 0 : 1)
                     visible: opacity > 0
-                    y: root.passwordView ? -48 : 0
+                    y: root.unlockAnimating ? -56 : (root.passwordView ? -48 : 0)
 
                     MouseArea {
                         anchors.fill: parent
@@ -367,9 +365,9 @@ Scope {
                 Item {
                     id: passwordView
                     anchors.fill: parent
-                    opacity: root.passwordView ? 1 : 0
+                    opacity: root.unlockAnimating ? 0 : (root.passwordView ? 1 : 0)
                     visible: opacity > 0
-                    y: root.passwordView ? 0 : 32
+                    y: root.unlockAnimating ? -28 : (root.passwordView ? 0 : 32)
 
                     Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                     Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
@@ -484,6 +482,7 @@ Scope {
                 }
 
                 Row {
+                    id: lockStatusRow
                     anchors {
                         right: parent.right
                         bottom: parent.bottom
@@ -491,6 +490,14 @@ Scope {
                         bottomMargin: 24
                     }
                     spacing: 12
+                    opacity: root.unlockAnimating ? 0 : 1
+
+                    transform: Translate {
+                        y: root.unlockAnimating ? 16 : 0
+                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                    }
+
+                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                     LockStatusPill {
                         interactive: true
@@ -555,7 +562,7 @@ Scope {
                     width: 360
                     height: Math.min(440, networkMenuColumn.implicitHeight + 24)
                     radius: 22
-                    visible: root.networkMenuOpen && !root.wifiPassVisible
+                    visible: root.networkMenuOpen && !root.wifiPassVisible && !root.unlockAnimating
                     opacity: visible ? 1 : 0
                     color: Qt.rgba(0.10, 0.10, 0.12, 0.86)
                     border.width: 1
@@ -753,7 +760,7 @@ Scope {
                     width: 360
                     height: wifiPasswordColumn.implicitHeight + 28
                     radius: 22
-                    visible: root.wifiPassVisible
+                    visible: root.wifiPassVisible && !root.unlockAnimating
                     opacity: visible ? 1 : 0
                     color: Qt.rgba(0.10, 0.10, 0.12, 0.90)
                     border.width: 1
@@ -917,7 +924,7 @@ Scope {
                     width: 210
                     height: powerColumn.implicitHeight + 18
                     radius: 20
-                    visible: root.powerMenuOpen
+                    visible: root.powerMenuOpen && !root.unlockAnimating
                     color: Qt.rgba(0.10, 0.10, 0.12, 0.82)
                     border.width: 1
                     border.color: Qt.rgba(1, 1, 1, 0.16)
