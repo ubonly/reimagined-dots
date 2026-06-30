@@ -225,7 +225,17 @@ color15              {color("on_surface_variant")}
 
 
 def write_starship():
-    content = r'''# Don't print a new line at the start of the prompt
+    duration_bg = color("primary_container")
+    duration_fg = color("on_primary_container")
+    directory_bg = color("secondary_container")
+    directory_fg = color("on_secondary_container")
+    git_bg = color("tertiary_container", fallback=color("primary_container"))
+    git_fg = color("on_tertiary_container", fallback=color("on_primary_container"))
+    character_ok = color("primary")
+    character_error = color("error")
+    fill_fg = color("outline")
+
+    content = f'''# Don't print a new line at the start of the prompt
 add_newline = false
 # Pipes ╰─ ╭─
 # Powerline symbols                                     
@@ -242,30 +252,30 @@ $cmd_duration $directory$git_branch
 
 [fill]
 symbol = '-'
-style = 'fg:245'
+style = 'fg:{fill_fg}'
 
 # Replace the "❯" symbol in the prompt with "➜"
 [character]                            # The name of the module we are configuring is "character"
-success_symbol = "[ ](bold fg:243)"
-error_symbol = "[ ](bold fg:244)"
+success_symbol = "[ ](bold fg:{character_ok})"
+error_symbol = "[ ](bold fg:{character_error})"
 
 # Disable the package module, hiding it from the prompt completely
 [package]
 disabled = true
 
 [git_branch]
-style = "bg: 252"
+style = "bg:{git_bg}"
 symbol = "󰘬"
 truncation_length = 12
 truncation_symbol = ""
-format = " 󰜥 [](bold fg:252)[$symbol $branch(:$remote_branch)](fg:235 bg:252)[ ](bold fg:252)"
+format = " 󰜥 [](bold fg:{git_bg})[$symbol $branch(:$remote_branch)](fg:{git_fg} bg:{git_bg})[ ](bold fg:{git_bg})"
 
 [git_commit]
 commit_hash_length = 4
 tag_symbol = " "
 
 [git_state]
-format = '[\($state( $progress_current of $progress_total)\)]($style) '
+format = '[\\($state( $progress_current of $progress_total)\\)]($style) '
 cherry_pick = "[🍒 PICKING](bold red)"
 
 [git_status]
@@ -276,13 +286,13 @@ diverged = " 😵 "
 untracked = " 🤷 ‍"
 stashed = " 📦 "
 modified = " 📝 "
-staged = '[++\($count\)](green)'
+staged = '[++\\($count\\)](green)'
 renamed = " ✍️ "
 deleted = " 🗑 "
 
 [hostname]
 ssh_only = false
-format =  "[•$hostname](bg:252 bold fg:235)[](bold fg:252)"
+format =  "[•$hostname](bg:{duration_bg} bold fg:{duration_fg})[](bold fg:{duration_bg})"
 trim_at = ".companyname.com"
 disabled = false
 
@@ -297,23 +307,23 @@ style = "bold dimmed green"
 
 [time]
 disabled = true
-format = '🕙[\[ $time \]]($style) '
+format = '🕙[\\[ $time \\]]($style) '
 time_format = "%T"
 
 [username]
-style_user = "bold bg:252 fg:235"
+style_user = "bold bg:{duration_bg} fg:{duration_fg}"
 style_root = "red bold"
-format = "[](bold fg:252)[$user]($style)"
+format = "[](bold fg:{duration_bg})[$user]($style)"
 disabled = false
 show_always = true
 
 [directory]
 home_symbol = " "
 read_only = "  "
-style = "bg:255 fg:240"
+style = "bg:{directory_bg} fg:{directory_fg}"
 truncation_length = 2
 truncation_symbol = ".../"
-format = '[](bold fg:255)[󰉋 → $path]($style)[](bold fg:255)'
+format = '[](bold fg:{directory_bg})[󰉋 → $path]($style)[](bold fg:{directory_bg})'
 
 
 [directory.substitutions]
@@ -327,7 +337,7 @@ format = '[](bold fg:255)[󰉋 → $path]($style)[](bold fg:255)'
 
 [cmd_duration]
 min_time = 0
-format = '[](bold fg:252)[󰪢 $duration](bold bg:252 fg:235)[](bold fg:252)'
+format = '[](bold fg:{duration_bg})[󰪢 $duration](bold bg:{duration_bg} fg:{duration_fg})[](bold fg:{duration_bg})'
 '''
     atomic_write(CONFIG_DIR / "terminal" / "starship.toml", content)
 
