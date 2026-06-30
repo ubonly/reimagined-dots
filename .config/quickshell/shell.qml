@@ -427,6 +427,10 @@ ShellRoot {
                     color: Qt.rgba(Theme.dockBg.r, Theme.dockBg.g, Theme.dockBg.b, Theme.dockBg.a * root.effectiveDockOpacity)
                     border.width: 0
                     border.color: Qt.rgba(Theme.dockBorder.r, Theme.dockBorder.g, Theme.dockBorder.b, Theme.dockBorder.a * root.effectiveDockOpacity)
+                    opacity: UnlockTransitionService.dockOpacity
+                    scale: UnlockTransitionService.dockScale
+                    transformOrigin: Item.Bottom
+                    transform: Translate { y: UnlockTransitionService.dockYOffset }
                 }
 
                 // ── Far-left: G launcher button ────────────────────────────
@@ -437,6 +441,10 @@ ShellRoot {
                         verticalCenter: parent.verticalCenter
                     }
                     width: 38; height: 38; radius: 19
+                    opacity: UnlockTransitionService.dockOpacity
+                    scale: UnlockTransitionService.dockScale
+                    transformOrigin: Item.Bottom
+                    transform: Translate { y: UnlockTransitionService.dockYOffset }
                     color: (appLauncherInst && appLauncherInst.isOpen) || launcherBtnArea.containsMouse
                         ? Theme.dockPillHover
                         : Theme.dockPill
@@ -492,6 +500,9 @@ ShellRoot {
                         }
                         width: recRow.implicitWidth + 16
                         height: 32; radius: 16
+                        scale: UnlockTransitionService.dockScale
+                        transformOrigin: Item.Bottom
+                        transform: Translate { y: UnlockTransitionService.dockYOffset }
                         color: Qt.rgba(0.85, 0.12, 0.12, 0.25)
                         border.color: Qt.rgba(0.85, 0.12, 0.12, 0.6)
                         border.width: 1
@@ -543,6 +554,10 @@ ShellRoot {
                         id: dockRow
                         anchors.centerIn: parent
                         spacing: 0
+                        opacity: UnlockTransitionService.dockOpacity
+                        scale: UnlockTransitionService.dockScale
+                        transformOrigin: Item.Bottom
+                        transform: Translate { y: UnlockTransitionService.dockYOffset }
 
                         Repeater {
                             model: 10
@@ -577,6 +592,10 @@ ShellRoot {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 2
+                        opacity: UnlockTransitionService.dockOpacity
+                        scale: UnlockTransitionService.dockScale
+                        transformOrigin: Item.Bottom
+                        transform: Translate { y: UnlockTransitionService.dockYOffset }
 
                         // (Recording indicator moved next to launcher button)
 

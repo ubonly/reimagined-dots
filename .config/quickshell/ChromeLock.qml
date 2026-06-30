@@ -16,8 +16,6 @@ Scope {
     property bool passwordView: false
     property bool unlockInProgress: false
     property bool unlockAnimating: false
-    property bool postUnlockVisible: false
-    property bool postUnlockActive: false
     property bool authFailed: false
     property bool powerMenuOpen: false
     property bool networkMenuOpen: false
@@ -50,10 +48,7 @@ Scope {
         authFailed = false;
         unlockInProgress = false;
         unlockAnimating = false;
-        postUnlockVisible = false;
-        postUnlockActive = false;
-        postUnlockStartTimer.stop();
-        postUnlockHideTimer.stop();
+        unlockTransition.reset();
         passwordView = false;
         powerMenuOpen = false;
         networkMenuOpen = false;
@@ -87,8 +82,7 @@ Scope {
         authFailed = true;
         unlockInProgress = false;
         unlockAnimating = false;
-        postUnlockVisible = false;
-        postUnlockActive = false;
+        unlockTransition.reset();
         passwordView = true;
         focusLock();
     }
@@ -97,12 +91,10 @@ Scope {
         authFailed = false;
         unlockInProgress = false;
         unlockAnimating = true;
-        postUnlockVisible = false;
-        postUnlockActive = false;
         powerMenuOpen = false;
         networkMenuOpen = false;
         wifiPassVisible = false;
-        unlockFinishTimer.restart();
+        unlockTransition.start();
     }
 
     function finishUnlock() {
@@ -117,10 +109,7 @@ Scope {
         wifiPassShow = false;
         wifiPassSsid = "";
         wifiPassError = "";
-        postUnlockVisible = true;
-        postUnlockActive = true;
         locked = false;
-        postUnlockStartTimer.restart();
     }
 
     function toggleNetworkMenu() {
@@ -177,30 +166,6 @@ Scope {
         }
     }
 
-    Timer {
-        id: unlockFinishTimer
-        interval: 150
-        repeat: false
-        onTriggered: root.finishUnlock()
-    }
-
-    Timer {
-        id: postUnlockStartTimer
-        interval: 32
-        repeat: false
-        onTriggered: {
-            root.postUnlockActive = false;
-            postUnlockHideTimer.restart();
-        }
-    }
-
-    Timer {
-        id: postUnlockHideTimer
-        interval: 340
-        repeat: false
-        onTriggered: root.postUnlockVisible = false
-    }
-
     Connections {
         target: NetworkService
         function onPasswordFinished(ok, message) {
@@ -251,6 +216,12 @@ Scope {
         onError: function(_) {
             root.failUnlock();
         }
+    }
+
+    UnlockTransition {
+        id: unlockTransition
+        wallpaperSource: root.wallpaperUrl()
+        onReleaseLockRequested: root.finishUnlock()
     }
 
     Component {
@@ -316,6 +287,8 @@ Scope {
                     fillMode: Image.PreserveAspectCrop
                     smooth: true
                     asynchronous: false
+                    scale: root.passwordView || root.unlockAnimating ? unlockTransition.lockWallpaperScale : 1
+                    transformOrigin: Item.Center
                     visible: status === Image.Ready
                 }
 
@@ -329,26 +302,39 @@ Scope {
                     source: wallpaper
                     radius: 64
                     samples: 129
-                    opacity: root.passwordView && wallpaper.visible ? 0.92 : 0
-                    scale: root.passwordView ? 1.04 : 1
+                    opacity: root.passwordView && wallpaper.visible ? 0.92 * unlockTransition.lockBlurOpacity : 0
+                    scale: root.passwordView ? 1.04 * unlockTransition.lockWallpaperScale : 1
                     visible: opacity > 0
 
-                    Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                    Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                    Behavior on opacity {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                    }
                 }
 
                 Rectangle {
                     anchors.fill: parent
-                    color: root.passwordView ? Qt.rgba(0, 0, 0, 0.34) : Qt.rgba(0, 0, 0, 0.10)
-                    Behavior on color { ColorAnimation { duration: 180 } }
+                    color: root.passwordView
+                        ? Qt.rgba(0, 0, 0, 0.34 * unlockTransition.lockDimOpacity)
+                        : Qt.rgba(0, 0, 0, 0.10)
+                    Behavior on color {
+                        enabled: !root.unlockAnimating
+                        ColorAnimation { duration: 180 }
+                    }
                 }
 
                 Item {
                     id: clockView
                     anchors.fill: parent
-                    opacity: root.unlockAnimating ? 0 : (root.passwordView ? 0 : 1)
+                    opacity: root.unlockAnimating ? unlockTransition.lockWidgetsOpacity : (root.passwordView ? 0 : 1)
                     visible: opacity > 0
-                    y: root.unlockAnimating ? -56 : (root.passwordView ? -48 : 0)
+                    y: root.unlockAnimating ? unlockTransition.lockWidgetsY : (root.passwordView ? -48 : 0)
+                    scale: root.unlockAnimating ? unlockTransition.lockClockScale : 1
+                    transformOrigin: Item.Center
 
                     MouseArea {
                         anchors.fill: parent
@@ -356,8 +342,14 @@ Scope {
                         onClicked: root.passwordView = true
                     }
 
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                    Behavior on opacity {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on y {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
+                    }
 
                     Column {
                         anchors {
@@ -395,12 +387,20 @@ Scope {
                 Item {
                     id: passwordView
                     anchors.fill: parent
-                    opacity: root.unlockAnimating ? 0 : (root.passwordView ? 1 : 0)
+                    opacity: root.unlockAnimating ? unlockTransition.lockWidgetsOpacity : (root.passwordView ? 1 : 0)
                     visible: opacity > 0
-                    y: root.unlockAnimating ? -28 : (root.passwordView ? 0 : 32)
+                    y: root.unlockAnimating ? unlockTransition.lockWidgetsY : (root.passwordView ? 0 : 32)
+                    scale: root.unlockAnimating ? unlockTransition.lockWidgetScale : 1
+                    transformOrigin: Item.Center
 
-                    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                    Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                    Behavior on opacity {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on y {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
+                    }
 
                     Column {
                         anchors.centerIn: parent
@@ -520,14 +520,16 @@ Scope {
                         bottomMargin: 24
                     }
                     spacing: 12
-                    opacity: root.unlockAnimating ? 0 : 1
+                    opacity: root.unlockAnimating ? unlockTransition.lockWidgetsOpacity : 1
 
                     transform: Translate {
-                        y: root.unlockAnimating ? 16 : 0
-                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                        y: root.unlockAnimating ? Math.max(0, -unlockTransition.lockWidgetsY * 0.45) : 0
                     }
 
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    Behavior on opacity {
+                        enabled: !root.unlockAnimating
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
 
                     LockStatusPill {
                         interactive: true
@@ -992,56 +994,6 @@ Scope {
         id: sessionLock
         locked: root.locked
         surface: lockSurfaceComponent
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        PanelWindow {
-            id: unlockReveal
-            property var modelData
-
-            screen: modelData
-            anchors { top: true; bottom: true; left: true; right: true }
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.namespace: "quickshell-lock-reveal"
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-            color: "transparent"
-            visible: root.postUnlockVisible
-
-            Item {
-                id: revealContent
-                anchors.fill: parent
-                opacity: root.postUnlockActive ? 1 : 0
-                y: root.postUnlockActive ? 0 : -34
-                scale: root.postUnlockActive ? 1 : 1.018
-                transformOrigin: Item.Center
-
-                Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
-                Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-                Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: Theme.bgColor
-                }
-
-                Image {
-                    anchors.fill: parent
-                    source: root.wallpaperUrl()
-                    fillMode: Image.PreserveAspectCrop
-                    smooth: true
-                    asynchronous: false
-                    visible: status === Image.Ready
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: Theme.isLight ? Qt.rgba(0, 0, 0, 0.16) : Qt.rgba(0, 0, 0, 0.24)
-                }
-            }
-        }
     }
 
     IpcHandler {
