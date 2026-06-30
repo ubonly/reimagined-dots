@@ -73,7 +73,6 @@ PanelWindow {
         radius: 16
         border.color: Theme.notificationBorder
         border.width: 1
-        clip: true
 
         // Block click-through
         MouseArea { anchors.fill: parent; onClicked: {} }
@@ -209,13 +208,15 @@ PanelWindow {
                 boundsBehavior: Flickable.StopAtBounds
                 boundsMovement: Flickable.StopAtBounds
                 reuseItems: true
-                cacheBuffer: 720
-                flickDeceleration: 8500
+                cacheBuffer: 240
+                flickDeceleration: 3600
                 maximumFlickVelocity: 4200
+                readonly property bool scrolling: moving || dragging || flicking
 
                 delegate: NotificationGroupCard {
                     width: notifList.width
                     group: modelData
+                    scrolling: notifList.scrolling
                 }
             }
         }

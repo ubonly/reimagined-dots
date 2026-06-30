@@ -470,7 +470,6 @@ PanelWindow {
         radius: 24
         border.color: Qt.rgba(1, 1, 1, 0.08)
         border.width: 1
-        clip: true
 
         transformOrigin: Item.BottomLeft
 
@@ -760,13 +759,14 @@ PanelWindow {
                 reuseItems: true
                 boundsBehavior: Flickable.StopAtBounds
                 boundsMovement: Flickable.StopAtBounds
-                flickDeceleration: 8500
-                maximumFlickVelocity: 4200
-                cacheBuffer: cellHeight * 7
+                flickDeceleration: 3600
+                maximumFlickVelocity: 5200
+                cacheBuffer: cellHeight * 2
                 highlightMoveDuration: 110
                 highlightRangeMode: GridView.NoHighlightRange
 
                 readonly property int columns: 5
+                readonly property bool scrolling: moving || dragging || flicking
 
                 function ensureActiveVisible() {
                     if (launcher.filteredApps.length === 0) return
@@ -783,11 +783,14 @@ PanelWindow {
                     Rectangle {
                         anchors.fill: parent
                         radius: 16
-                        color: (cellMouse.containsMouse || index === launcher.activeIndex)
+                        color: ((!appScroll.scrolling && cellMouse.containsMouse) || index === launcher.activeIndex)
                                ? launcher.hoverBg : "transparent"
                         border.color: (index === launcher.activeIndex) ? Qt.rgba(1, 1, 1, 0.15) : "transparent"
                         border.width: 1
-                        Behavior on color { ColorAnimation { duration: 80 } }
+                        Behavior on color {
+                            enabled: !appScroll.scrolling
+                            ColorAnimation { duration: 80 }
+                        }
                     }
 
                     Column {
@@ -844,7 +847,7 @@ PanelWindow {
                     MouseArea {
                         id: cellMouse
                         anchors.fill: parent
-                        hoverEnabled: true
+                        hoverEnabled: !appScroll.scrolling
                         cursorShape: Qt.PointingHandCursor
                         onClicked: if (cell.app) launcher.launchApp(cell.app.exec)
                     }

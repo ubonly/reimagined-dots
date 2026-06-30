@@ -31,8 +31,8 @@ PanelWindow {
         boundsBehavior: Flickable.StopAtBounds
         boundsMovement: Flickable.StopAtBounds
         reuseItems: true
-        cacheBuffer: 520
-        flickDeceleration: 8500
+        cacheBuffer: 160
+        flickDeceleration: 3600
         maximumFlickVelocity: 4200
 
         model: NotificationService.popupNotifications

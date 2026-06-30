@@ -20,6 +20,7 @@ Rectangle {
     property var    notifTime:    notification ? notification.time : new Date()
     property var    actions:      notification ? (notification.actions || []) : []
     property bool expanded: false
+    property bool scrolling: false
 
     readonly property color cBg:        Theme.notificationCardBg
     readonly property color cBgHover:   Theme.notificationHover
@@ -37,7 +38,6 @@ Rectangle {
     color: cBg
     border.color: Theme.notificationBorder
     border.width: 1
-    clip: true
 
     opacity: isPopup ? 0 : 1
     transform: Translate { id: slideIn; y: -12 }
@@ -65,6 +65,7 @@ Rectangle {
 
     HoverHandler {
         id: hoverHandler
+        enabled: card.isPopup
         onHoveredChanged: {
             if (hovered) {
                 dismissTimer.stop()
@@ -132,8 +133,11 @@ Rectangle {
                 Layout.preferredWidth: 22
                 Layout.preferredHeight: 22
                 radius: 11
-                color: chevArea.containsMouse ? card.cBgHover : "transparent"
-                Behavior on color { ColorAnimation { duration: 120 } }
+                color: (!card.scrolling && chevArea.containsMouse) ? card.cBgHover : "transparent"
+                Behavior on color {
+                    enabled: !card.scrolling
+                    ColorAnimation { duration: 120 }
+                }
                 visible: card.hasExpandableContent
 
                 Image {
@@ -158,7 +162,7 @@ Rectangle {
                 MouseArea {
                     id: chevArea
                     anchors.fill: parent
-                    hoverEnabled: true
+                    hoverEnabled: !card.scrolling
                     cursorShape: Qt.PointingHandCursor
                     onClicked: card.expanded = !card.expanded
                 }
@@ -168,7 +172,7 @@ Rectangle {
                 Layout.preferredWidth: 22
                 Layout.preferredHeight: 22
                 radius: 11
-                color: dismissArea.containsMouse ? card.cBgHover : "transparent"
+                color: (!card.scrolling && dismissArea.containsMouse) ? card.cBgHover : "transparent"
                 visible: showDismiss
 
                 Image {
@@ -189,7 +193,7 @@ Rectangle {
                 MouseArea {
                     id: dismissArea
                     anchors.fill: parent
-                    hoverEnabled: true
+                    hoverEnabled: !card.scrolling
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         if (card.notification)
@@ -261,7 +265,7 @@ Rectangle {
                         Layout.preferredHeight: 30
                         Layout.preferredWidth: Math.min(160, actionLabel.implicitWidth + 24)
                         radius: 15
-                        color: actionArea.containsMouse
+                        color: (!card.scrolling && actionArea.containsMouse)
                             ? Theme.notificationPressed
                             : Theme.notificationHover
                         opacity: notification && notification.live ? 1.0 : 0.5
@@ -277,7 +281,7 @@ Rectangle {
                         MouseArea {
                             id: actionArea
                             anchors.fill: parent
-                            hoverEnabled: true
+                            hoverEnabled: !card.scrolling
                             enabled: notification && notification.live
                             cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                             onClicked: NotificationService.invokeAction(notification.id, modelData.identifier)

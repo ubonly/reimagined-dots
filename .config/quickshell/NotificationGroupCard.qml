@@ -10,6 +10,7 @@ Rectangle {
 
     property var group: null
     property bool expanded: false
+    property bool scrolling: false
 
     readonly property var notifications: group ? (group.notifications || []) : []
     readonly property string appName: group ? (group.appName || "Notification") : "Notification"
@@ -22,7 +23,6 @@ Rectangle {
     color: Theme.notificationGroupBg
     border.color: Theme.notificationBorder
     border.width: 1
-    clip: true
 
     Behavior on implicitHeight { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
@@ -82,7 +82,7 @@ Rectangle {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
                 radius: 13
-                color: expandArea.containsMouse ? Theme.notificationHover : "transparent"
+                color: (!groupCard.scrolling && expandArea.containsMouse) ? Theme.notificationHover : "transparent"
                 visible: groupCard.count > 1
 
                 Image {
@@ -105,7 +105,7 @@ Rectangle {
                 MouseArea {
                     id: expandArea
                     anchors.fill: parent
-                    hoverEnabled: true
+                    hoverEnabled: !groupCard.scrolling
                     cursorShape: Qt.PointingHandCursor
                     onClicked: groupCard.expanded = !groupCard.expanded
                 }
@@ -115,7 +115,7 @@ Rectangle {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
                 radius: 13
-                color: dismissArea.containsMouse ? Theme.notificationHover : "transparent"
+                color: (!groupCard.scrolling && dismissArea.containsMouse) ? Theme.notificationHover : "transparent"
 
                 Image {
                     id: dismissIcon
@@ -134,7 +134,7 @@ Rectangle {
                 MouseArea {
                     id: dismissArea
                     anchors.fill: parent
-                    hoverEnabled: true
+                    hoverEnabled: !groupCard.scrolling
                     cursorShape: Qt.PointingHandCursor
                     onClicked: groupCard.dismissGroup()
                 }
@@ -155,6 +155,7 @@ Rectangle {
                     isPopup: false
                     showActions: true
                     showDismiss: true
+                    scrolling: groupCard.scrolling
                 }
             }
         }
