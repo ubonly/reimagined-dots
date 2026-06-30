@@ -16,6 +16,8 @@ Scope {
     property bool passwordView: false
     property bool unlockInProgress: false
     property bool unlockAnimating: false
+    property bool postUnlockVisible: false
+    property bool postUnlockActive: false
     property bool authFailed: false
     property bool powerMenuOpen: false
     property bool networkMenuOpen: false
@@ -48,6 +50,10 @@ Scope {
         authFailed = false;
         unlockInProgress = false;
         unlockAnimating = false;
+        postUnlockVisible = false;
+        postUnlockActive = false;
+        postUnlockStartTimer.stop();
+        postUnlockHideTimer.stop();
         passwordView = false;
         powerMenuOpen = false;
         networkMenuOpen = false;
@@ -81,6 +87,8 @@ Scope {
         authFailed = true;
         unlockInProgress = false;
         unlockAnimating = false;
+        postUnlockVisible = false;
+        postUnlockActive = false;
         passwordView = true;
         focusLock();
     }
@@ -89,6 +97,8 @@ Scope {
         authFailed = false;
         unlockInProgress = false;
         unlockAnimating = true;
+        postUnlockVisible = false;
+        postUnlockActive = false;
         powerMenuOpen = false;
         networkMenuOpen = false;
         wifiPassVisible = false;
@@ -107,7 +117,10 @@ Scope {
         wifiPassShow = false;
         wifiPassSsid = "";
         wifiPassError = "";
+        postUnlockVisible = true;
+        postUnlockActive = true;
         locked = false;
+        postUnlockStartTimer.restart();
     }
 
     function toggleNetworkMenu() {
@@ -166,9 +179,26 @@ Scope {
 
     Timer {
         id: unlockFinishTimer
-        interval: 360
+        interval: 150
         repeat: false
         onTriggered: root.finishUnlock()
+    }
+
+    Timer {
+        id: postUnlockStartTimer
+        interval: 32
+        repeat: false
+        onTriggered: {
+            root.postUnlockActive = false;
+            postUnlockHideTimer.restart();
+        }
+    }
+
+    Timer {
+        id: postUnlockHideTimer
+        interval: 340
+        repeat: false
+        onTriggered: root.postUnlockVisible = false
     }
 
     Connections {
@@ -962,6 +992,56 @@ Scope {
         id: sessionLock
         locked: root.locked
         surface: lockSurfaceComponent
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: unlockReveal
+            property var modelData
+
+            screen: modelData
+            anchors { top: true; bottom: true; left: true; right: true }
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "quickshell-lock-reveal"
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            color: "transparent"
+            visible: root.postUnlockVisible
+
+            Item {
+                id: revealContent
+                anchors.fill: parent
+                opacity: root.postUnlockActive ? 1 : 0
+                y: root.postUnlockActive ? 0 : -34
+                scale: root.postUnlockActive ? 1 : 1.018
+                transformOrigin: Item.Center
+
+                Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+                Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Theme.bgColor
+                }
+
+                Image {
+                    anchors.fill: parent
+                    source: root.wallpaperUrl()
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                    asynchronous: false
+                    visible: status === Image.Ready
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Theme.isLight ? Qt.rgba(0, 0, 0, 0.16) : Qt.rgba(0, 0, 0, 0.24)
+                }
+            }
+        }
     }
 
     IpcHandler {
