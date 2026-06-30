@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any, Callable
 
 import dbus
@@ -21,7 +22,9 @@ class KDEConnectService:
     """
 
     service_name = "org.kde.kdeconnect"
+    daemon_path = "/modules/kdeconnect"
     devices_root = "/modules/kdeconnect/devices"
+    daemon_iface = "org.kde.kdeconnect.daemon"
     device_iface = "org.kde.kdeconnect.device"
     battery_iface = "org.kde.kdeconnect.device.battery"
     ping_iface = "org.kde.kdeconnect.device.ping"
@@ -87,7 +90,12 @@ class KDEConnectService:
     def _device_paths(self) -> list[str]:
         if not self.daemon_running:
             return []
-        return [f"{self.devices_root}/{device_id}" for device_id in self._introspect_children(self.devices_root)]
+        try:
+            daemon = self._interface(self.daemon_path, self.daemon_iface)
+            device_ids = [str(device_id) for device_id in daemon.devices(False, False)]
+        except dbus.DBusException:
+            device_ids = self._introspect_children(self.devices_root)
+        return [f"{self.devices_root}/{device_id}" for device_id in device_ids]
 
     def _device_supports(self, path: str, plugin: str) -> bool:
         try:
@@ -269,7 +277,8 @@ class KDEConnectService:
         path = result.stdout.strip()
         if result.returncode != 0 or not path:
             return self.snapshot()
-        self._interface(f"{self._device_path(device_id)}/share", self.share_iface).openFile(os.path.abspath(path))
+        file_uri = Path(os.path.abspath(path)).as_uri()
+        self._interface(f"{self._device_path(device_id)}/share", self.share_iface).openFile(file_uri)
         return self.snapshot()
 
     def watch(self, emit: Callable[[dict[str, Any]], None]) -> None:
@@ -310,14 +319,15 @@ class KDEConnectService:
             sender_keyword="sender",
             path_keyword="path",
         )
+        for signal in ("deviceAdded", "deviceRemoved", "deviceVisibilityChanged", "deviceListChanged"):
+            self.bus.add_signal_receiver(
+                schedule_emit,
+                signal_name=signal,
+                dbus_interface=self.daemon_iface,
+                path=self.daemon_path,
+            )
         for signal in ("reachableChanged", "pairStateChanged", "nameChanged", "typeChanged", "pluginsChanged", "linksChanged", "refreshed"):
             self.bus.add_signal_receiver(schedule_emit, signal_name=signal, sender_keyword="sender", path_keyword="path")
 
-        # KDE Connect does not expose org.freedesktop.DBus.ObjectManager on the
-        # devices root, so brand-new object paths cannot be discovered solely by
-        # InterfacesAdded. A slow fallback re-introspects the devices root while
-        # DBus signals handle normal property updates.
-        GLib.timeout_add_seconds(15, emit_snapshot)
         emit_snapshot()
         loop.run()
-
