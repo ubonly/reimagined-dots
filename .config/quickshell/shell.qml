@@ -299,6 +299,12 @@ ShellRoot {
                 screenRef: modelData
             }
 
+            // Calendar bubble (bottom-right popup)
+            CalendarPopup {
+                id: calendarPopupInst
+                screenRef: modelData
+            }
+
             Component.onCompleted: {
                 var list = _launchers.slice()
                 list.push(appLauncherInst)
@@ -671,15 +677,25 @@ ShellRoot {
                                     anchors.fill: parent
                                     anchors.margins: 4
                                     radius: height / 2
-                                    color: "transparent"
+                                    color: calendarPopupInst.isOpen
+                                        ? Theme.dockActive
+                                        : (dateArea.containsMouse ? Theme.dockPillHover : "transparent")
                                 }
 
                                 Text {
                                     id: dateTxt
                                     anchors.centerIn: parent
                                     text: Qt.formatDateTime(clock.date, "MMM d")
-                                    color: Theme.dockText
+                                    color: calendarPopupInst.isOpen ? Theme.dockActiveText : Theme.dockText
                                     font { pixelSize: 13; family: "Google Sans"; weight: Font.Bold }
+                                }
+
+                                MouseArea {
+                                    id: dateArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: calendarPopupInst.isOpen = !calendarPopupInst.isOpen
                                 }
                             }
 
