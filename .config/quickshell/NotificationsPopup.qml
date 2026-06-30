@@ -28,6 +28,12 @@ PanelWindow {
         clip: true
         interactive: true
         verticalLayoutDirection: ListView.TopToBottom
+        boundsBehavior: Flickable.StopAtBounds
+        boundsMovement: Flickable.StopAtBounds
+        reuseItems: true
+        cacheBuffer: 520
+        flickDeceleration: 8500
+        maximumFlickVelocity: 4200
 
         model: NotificationService.popupNotifications
 

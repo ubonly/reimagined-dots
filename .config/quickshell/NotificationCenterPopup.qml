@@ -28,7 +28,7 @@ PanelWindow {
 
     Timer {
         id: closeTimer
-        interval: 260
+        interval: 210
         repeat: false
         onTriggered: root._animVisible = false
     }
@@ -78,19 +78,17 @@ PanelWindow {
         // Block click-through
         MouseArea { anchors.fill: parent; onClicked: {} }
 
-        scale: root.isOpen ? 1.0 : 0.95
         opacity: root.isOpen ? 1.0 : 0.0
         transformOrigin: Item.BottomRight
 
         transform: Translate {
-            y: root.isOpen ? 0 : 24
+            y: root.isOpen ? 0 : 18
             Behavior on y {
-                NumberAnimation { duration: 250; easing.type: Easing.OutQuint }
+                NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
             }
         }
 
-        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: 190; easing.type: Easing.OutCubic } }
 
         // header
         Item {
@@ -209,6 +207,11 @@ PanelWindow {
                 clip: true
                 visible: root.groupedHistory.length > 0
                 boundsBehavior: Flickable.StopAtBounds
+                boundsMovement: Flickable.StopAtBounds
+                reuseItems: true
+                cacheBuffer: 720
+                flickDeceleration: 8500
+                maximumFlickVelocity: 4200
 
                 delegate: NotificationGroupCard {
                     width: notifList.width

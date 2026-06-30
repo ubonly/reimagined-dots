@@ -1,3 +1,5 @@
+//@ pragma Env QT_QUICK_FLICKABLE_WHEEL_DECELERATION=10000
+
 // shell.qml
 import Quickshell
 import Quickshell.Wayland

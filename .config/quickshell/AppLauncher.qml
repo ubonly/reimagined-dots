@@ -40,21 +40,21 @@ PanelWindow {
 
     Timer {
         id: closeTimer
-        interval: 260
+        interval: 210
         repeat: false
         onTriggered: launcher._animVisible = false
     }
 
     Timer {
         id: settleTimer
-        interval: 260
+        interval: 220
         repeat: false
         onTriggered: launcher._settledOpen = launcher.isOpen
     }
 
     Timer {
         id: focusTimer
-        interval: 130
+        interval: 90
         repeat: false
         onTriggered: {
             if (launcher.isOpen)
@@ -480,21 +480,18 @@ PanelWindow {
         }
 
         opacity: 0
-        scale: 0.975
 
         states: [
             State {
                 name: "visible"
                 when: launcher.isOpen
                 PropertyChanges { target: popupWindow;       opacity: 1.0 }
-                PropertyChanges { target: popupWindow;       scale: 1.0 }
                 PropertyChanges { target: launcherTranslate; y: 0 }
             },
             State {
                 name: "hidden"
                 when: !launcher.isOpen
                 PropertyChanges { target: popupWindow;       opacity: 0 }
-                PropertyChanges { target: popupWindow;       scale: 0.975 }
                 PropertyChanges { target: launcherTranslate; y: 30 }
             }
         ]
@@ -510,16 +507,10 @@ PanelWindow {
                         easing.type: Easing.OutQuad
                     }
                     NumberAnimation {
-                        target: popupWindow
-                        property: "scale"
-                        duration: 320
-                        easing.type: Easing.OutQuint
-                    }
-                    NumberAnimation {
                         target: launcherTranslate
                         property: "y"
-                        duration: 340
-                        easing.type: Easing.OutQuint
+                        duration: 220
+                        easing.type: Easing.OutCubic
                     }
                 }
             },
@@ -533,15 +524,9 @@ PanelWindow {
                         easing.type: Easing.OutQuad
                     }
                     NumberAnimation {
-                        target: popupWindow
-                        property: "scale"
-                        duration: 220
-                        easing.type: Easing.OutQuad
-                    }
-                    NumberAnimation {
                         target: launcherTranslate
                         property: "y"
-                        duration: 220
+                        duration: 180
                         easing.type: Easing.OutQuad
                     }
                 }
@@ -772,11 +757,12 @@ PanelWindow {
                 cellWidth: width / columns
                 cellHeight: 110
                 currentIndex: launcher.activeIndex
-                boundsBehavior: Flickable.DragOverBounds
-                boundsMovement: Flickable.FollowBoundsBehavior
-                flickDeceleration: 3600
-                maximumFlickVelocity: 5200
-                cacheBuffer: cellHeight * 4
+                reuseItems: true
+                boundsBehavior: Flickable.StopAtBounds
+                boundsMovement: Flickable.StopAtBounds
+                flickDeceleration: 8500
+                maximumFlickVelocity: 4200
+                cacheBuffer: cellHeight * 7
                 highlightMoveDuration: 110
                 highlightRangeMode: GridView.NoHighlightRange
 

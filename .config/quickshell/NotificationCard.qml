@@ -39,15 +39,19 @@ Rectangle {
     border.width: 1
     clip: true
 
-    opacity: 0
+    opacity: isPopup ? 0 : 1
     transform: Translate { id: slideIn; y: -12 }
     Component.onCompleted: {
-        opacity = 1
         slideIn.y = 0
-        if (isPopup)
+        if (isPopup) {
+            opacity = 1
             dismissTimer.start()
+        }
     }
-    Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+    Behavior on opacity {
+        enabled: card.isPopup
+        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+    }
 
     Timer {
         id: dismissTimer
