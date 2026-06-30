@@ -21,12 +21,12 @@ Rectangle {
     property var    actions:      notification ? (notification.actions || []) : []
     property bool expanded: false
 
-    readonly property color cBg:        Theme.surfaceVariant
-    readonly property color cBgHover:   Theme.outline
-    readonly property color cIconBg:    Theme.outlineVariant
+    readonly property color cBg:        Theme.notificationCardBg
+    readonly property color cBgHover:   Theme.notificationHover
+    readonly property color cIconBg:    Theme.notificationIconBg
     readonly property color cTextDim:   Theme.colorOnSurfaceVariant
     readonly property color cTextBody:  Theme.colorOnSurface
-    readonly property color cTextTitle: Theme.primary
+    readonly property color cTextTitle: Theme.colorOnSurface
     readonly property bool hasImage: imagePath.length > 0
     readonly property bool hasExpandableContent: bodyText.length > 0 || hasImage || (showActions && actions.length > 0)
 
@@ -35,7 +35,7 @@ Rectangle {
 
     radius: 20
     color: cBg
-    border.color: Qt.rgba(1, 1, 1, 0.04)
+    border.color: Theme.notificationBorder
     border.width: 1
     clip: true
 
@@ -128,7 +128,7 @@ Rectangle {
                 Layout.preferredWidth: 22
                 Layout.preferredHeight: 22
                 radius: 11
-                color: chevArea.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                color: chevArea.containsMouse ? card.cBgHover : "transparent"
                 Behavior on color { ColorAnimation { duration: 120 } }
                 visible: card.hasExpandableContent
 
@@ -164,7 +164,7 @@ Rectangle {
                 Layout.preferredWidth: 22
                 Layout.preferredHeight: 22
                 radius: 11
-                color: dismissArea.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                color: dismissArea.containsMouse ? card.cBgHover : "transparent"
                 visible: showDismiss
 
                 Image {
@@ -228,7 +228,7 @@ Rectangle {
                 Layout.preferredHeight: 132
                 Layout.topMargin: 8
                 radius: 14
-                color: Theme.outlineVariant
+                color: Theme.notificationIconBg
                 clip: true
                 visible: card.expanded && card.hasImage
                 opacity: visible ? 1.0 : 0.0
@@ -258,8 +258,8 @@ Rectangle {
                         Layout.preferredWidth: Math.min(160, actionLabel.implicitWidth + 24)
                         radius: 15
                         color: actionArea.containsMouse
-                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.22 : 0.18)
-                            : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.16 : 0.12)
+                            ? Theme.notificationPressed
+                            : Theme.notificationHover
                         opacity: notification && notification.live ? 1.0 : 0.5
 
                         Text {

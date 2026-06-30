@@ -19,8 +19,8 @@ Rectangle {
 
     implicitHeight: content.implicitHeight + 24
     radius: 20
-    color: Theme.surfaceVariant
-    border.color: Qt.rgba(1, 1, 1, 0.05)
+    color: Theme.notificationGroupBg
+    border.color: Theme.notificationBorder
     border.width: 1
     clip: true
 
@@ -40,7 +40,7 @@ Rectangle {
                 Layout.preferredWidth: 24
                 Layout.preferredHeight: 24
                 radius: 12
-                color: Theme.outlineVariant
+                color: Theme.notificationIconBg
                 clip: true
 
                 Image {
@@ -66,7 +66,7 @@ Rectangle {
                 Layout.preferredWidth: countLabel.implicitWidth + 14
                 Layout.preferredHeight: 22
                 radius: 11
-                color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, Theme.isLight ? 0.16 : 0.14)
+                color: Theme.notificationHover
                 visible: groupCard.count > 1
 
                 Text {
@@ -82,7 +82,7 @@ Rectangle {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
                 radius: 13
-                color: expandArea.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                color: expandArea.containsMouse ? Theme.notificationHover : "transparent"
                 visible: groupCard.count > 1
 
                 Image {
@@ -115,7 +115,7 @@ Rectangle {
                 Layout.preferredWidth: 26
                 Layout.preferredHeight: 26
                 radius: 13
-                color: dismissArea.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                color: dismissArea.containsMouse ? Theme.notificationHover : "transparent"
 
                 Image {
                     id: dismissIcon

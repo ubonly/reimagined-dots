@@ -60,6 +60,15 @@ Item {
     property color dockActive: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.24 : 0.80)
     property color dockActiveText: isLight ? colorOnSurface : colorOnPrimary
 
+    property color notificationCenterBg: blendColor(surface, primary, isLight ? 0.025 : 0.075, 0.96)
+    property color notificationGroupBg: blendColor(surfaceVariant, primaryContainer, isLight ? 0.08 : 0.10, 0.94)
+    property color notificationCardBg: blendColor(surface, primaryContainer, isLight ? 0.06 : 0.08, 0.92)
+    property color notificationHover: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.12 : 0.16)
+    property color notificationPressed: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.18 : 0.22)
+    property color notificationIconBg: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.13 : 0.18)
+    property color notificationBorder: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.09 : 0.08)
+    property color notificationDivider: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.10 : 0.08)
+
     property string lastColorsContent: ""
 
     Timer {
@@ -103,5 +112,14 @@ Item {
                 }
             }
         }
+    }
+
+    function blendColor(base, tint, strength, alpha) {
+        return Qt.rgba(
+            base.r * (1 - strength) + tint.r * strength,
+            base.g * (1 - strength) + tint.g * strength,
+            base.b * (1 - strength) + tint.b * strength,
+            alpha
+        )
     }
 }

@@ -69,9 +69,9 @@ PanelWindow {
         }
         width: 380
         height: Math.min(620, headerSection.height + contentArea.implicitHeight + 24)
-        color: Qt.rgba(0.18, 0.18, 0.22, 0.95)
+        color: Theme.notificationCenterBg
         radius: 16
-        border.color: Qt.rgba(1, 1, 1, 0.05)
+        border.color: Theme.notificationBorder
         border.width: 1
         clip: true
 
@@ -105,7 +105,7 @@ PanelWindow {
                 id: titleText
                 anchors { left: parent.left; verticalCenter: parent.verticalCenter }
                 text: "Notifications"
-                color: Qt.rgba(1, 1, 1, 0.92)
+                color: Theme.colorOnSurface
                 font { family: "Google Sans"; pixelSize: 15; weight: Font.Medium }
             }
 
@@ -116,7 +116,7 @@ PanelWindow {
                 width: 12 + 14 + 6 + clearLbl.implicitWidth + 12 // leftMargin + icon + spacing + text + rightMargin
                 height: 28
                 radius: 14
-                color: clearArea.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.07)
+                color: clearArea.containsMouse ? Theme.notificationPressed : Theme.notificationHover
                 Behavior on color { ColorAnimation { duration: 120 } }
                 visible: root.history.length > 0
 
@@ -143,7 +143,7 @@ PanelWindow {
                     id: clearLbl
                     anchors { left: clearIconContainer.right; leftMargin: 6; verticalCenter: parent.verticalCenter }
                     text: "Clear all"
-                    color: Qt.rgba(1, 1, 1, 0.85)
+                    color: Theme.colorOnSurface
                     font { family: "Google Sans"; pixelSize: 12; weight: Font.Medium }
                 }
 
@@ -189,14 +189,14 @@ PanelWindow {
                     ColorOverlay {
                         anchors.fill: emptyIcon
                         source: emptyIcon
-                        color: Qt.rgba(1, 1, 1, 0.3)
+                        color: Theme.colorOnSurfaceVariant
                         visible: root.groupedHistory.length === 0
                     }
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "No notifications"
-                    color: Qt.rgba(1, 1, 1, 0.4)
+                    color: Theme.colorOnSurfaceVariant
                     font { family: "Google Sans"; pixelSize: 13 }
                 }
             }
