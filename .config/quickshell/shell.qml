@@ -224,7 +224,7 @@ ShellRoot {
 
             Process {
                 id: hyprctlProc
-                command: ["python3", Qt.resolvedUrl("workspace-clients.py").toString().replace("file://", "")]
+                command: ["python3", "-B", Qt.resolvedUrl("workspace-clients.py").toString().replace("file://", "")]
                 running: true
                 stdout: SplitParser {
                     onRead: function(line) { screenItem._buf += line }

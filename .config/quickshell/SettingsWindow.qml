@@ -131,6 +131,9 @@ FloatingWindow {
         if (ConfigService.ready) {
             ConfigService.values.settingsPage = clampSettingsPage(currentPage);
         }
+        if (currentPage === 2) {
+            IntegrationService.refresh();
+        }
     }
 
     Connections {
@@ -453,6 +456,71 @@ FloatingWindow {
         }
     }
 
+    component ActionButton: Rectangle {
+        id: abtn
+        property string label: ""
+        property bool primary: false
+        property bool enabled: true
+        signal clicked()
+
+        implicitWidth: Math.max(96, btnLabel.implicitWidth + 28)
+        implicitHeight: 34
+        radius: 17
+        opacity: enabled ? 1.0 : 0.45
+        color: primary
+               ? settingsRoot.textPrimary
+               : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, btnMouse.containsMouse ? 0.12 : 0.07)
+        border.width: primary ? 0 : 1
+        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+        Behavior on color { ColorAnimation { duration: 140 } }
+
+        Text {
+            id: btnLabel
+            anchors.centerIn: parent
+            text: abtn.label
+            color: abtn.primary ? Theme.bgColor : settingsRoot.textPrimary
+            font.pixelSize: 12
+            font.family: "Google Sans"
+            font.weight: Font.Medium
+        }
+
+        MouseArea {
+            id: btnMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            enabled: abtn.enabled
+            cursorShape: Qt.PointingHandCursor
+            onClicked: abtn.clicked()
+        }
+    }
+
+    component StatusPill: Rectangle {
+        id: pill
+        property string label: ""
+        property bool active: false
+
+        implicitWidth: pillText.implicitWidth + 20
+        implicitHeight: 26
+        radius: 13
+        color: active
+               ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.18)
+               : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.07)
+        border.width: 1
+        border.color: active
+                      ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.25)
+                      : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+
+        Text {
+            id: pillText
+            anchors.centerIn: parent
+            text: pill.label
+            color: active ? settingsRoot.activeItem : settingsRoot.textSecondary
+            font.pixelSize: 11
+            font.family: "Google Sans"
+            font.weight: Font.Medium
+        }
+    }
+
     // ── ThemeCard (Cloud) ──────────────────────────────────────────────────
     component ThemeCard: Rectangle {
         id: tCard
@@ -687,7 +755,7 @@ FloatingWindow {
 
 
 
-                        NavItem { navIconSource: "assets/icons/desktop-windows.svg";    navTitle: "Device";              navSub: "Keyboard, mouse, print";       navIndex: 2 }
+                        NavItem { navIconSource: "assets/icons/devices-other.svg";      navTitle: "Integrations";        navSub: "Sync, phone, providers";       navIndex: 2 }
                         NavItem { navIconSource: "assets/icons/wallpaper.svg";          navTitle: "Wallpaper and style"; navSub: "Dark theme, screen saver";     navIndex: 3 }
                         NavItem { navIconSource: "assets/icons/apps.svg";               navTitle: "Dock";                navSub: "Shelf style and behavior";     navIndex: 4 }
                         NavItem { navIconSource: "assets/icons/accessibility.svg";      navTitle: "Accessibility";       navSub: "Screen reader, magnification"; navIndex: 5 }
@@ -759,7 +827,7 @@ FloatingWindow {
 
                                     Text {
                                         text: {
-                                            var titles = ["","","Device","Wallpaper and style",
+                                            var titles = ["","","Integrations","Wallpaper and style",
                                                 "Dock","Accessibility","System preferences","About your system"]
                                             return titles[settingsRoot.currentPage] || "Settings"
                                         }
@@ -773,13 +841,263 @@ FloatingWindow {
                                     Item {
                                         Layout.fillWidth: true
                                         implicitHeight: 120
-                                         visible: settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7
+                                         visible: settingsRoot.currentPage !== 2 && settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7
                                         Text {
                                             anchors.centerIn: parent
                                             text: "Coming soon"
                                             font.pixelSize: 13; font.family: "Google Sans"
                                             font.italic: true
                                             color: Qt.rgba(1,1,1,0.18)
+                                        }
+                                    }
+
+                                    // PAGE 2: Integrations
+                                    ColumnLayout {
+                                        visible: settingsRoot.currentPage === 2
+                                        Layout.fillWidth: true
+                                        spacing: 12
+
+                                        Text {
+                                            text: "Sync"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: syncCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: syncCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 14
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 10
+
+                                                    ColumnLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: 2
+                                                        Text {
+                                                            text: "Provider"
+                                                            font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                            color: settingsRoot.textPrimary
+                                                        }
+                                                        Text {
+                                                            text: "Only one provider can be active at a time"
+                                                            font.pixelSize: 12; font.family: "Google Sans"
+                                                            color: settingsRoot.textSecondary
+                                                        }
+                                                    }
+
+                                                    RowLayout {
+                                                        spacing: 8
+                                                        Repeater {
+                                                            model: IntegrationService.providers
+                                                            delegate: Rectangle {
+                                                                required property var modelData
+                                                                property bool activeProvider: IntegrationService.activeProvider === modelData.id
+                                                                property bool controlsLocked: IntegrationService.busy || IntegrationService.syncStatus.connecting || IntegrationService.syncStatus.connected
+
+                                                                implicitWidth: providerLabel.implicitWidth + 26
+                                                                implicitHeight: 32
+                                                                radius: 16
+                                                                color: activeProvider
+                                                                       ? settingsRoot.textPrimary
+                                                                       : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, providerMouse.containsMouse ? 0.12 : 0.06)
+                                                                border.width: activeProvider ? 0 : 1
+                                                                border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                                Behavior on color { ColorAnimation { duration: 140 } }
+
+                                                                Text {
+                                                                    id: providerLabel
+                                                                    anchors.centerIn: parent
+                                                                    text: modelData.displayName || modelData.id
+                                                                    color: parent.activeProvider ? Theme.bgColor : settingsRoot.textPrimary
+                                                                    font.pixelSize: 12
+                                                                    font.family: "Google Sans"
+                                                                    font.weight: Font.Medium
+                                                                }
+
+                                                                MouseArea {
+                                                                    id: providerMouse
+                                                                    anchors.fill: parent
+                                                                    hoverEnabled: true
+                                                                    enabled: !parent.controlsLocked
+                                                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                                    onClicked: IntegrationService.selectSyncProvider(modelData.id)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                Rectangle { Layout.fillWidth: true; height: 1; color: settingsRoot.dividerColor }
+
+                                                InfoRow {
+                                                    label: "Status"
+                                                    value: IntegrationService.syncStatus.connecting
+                                                           ? "Connecting..."
+                                                           : (IntegrationService.syncStatus.connected ? "Connected" : "Not connected")
+                                                }
+                                                InfoRow {
+                                                    visible: IntegrationService.syncStatus.connected
+                                                    label: "Username"
+                                                    value: IntegrationService.syncStatus.username
+                                                }
+                                                InfoRow {
+                                                    visible: IntegrationService.syncStatus.connected
+                                                    label: "Repository"
+                                                    value: IntegrationService.syncStatus.repository
+                                                }
+                                                InfoRow {
+                                                    visible: IntegrationService.syncStatus.connected
+                                                    label: "Last sync"
+                                                    value: IntegrationService.syncStatus.lastSync || "Never"
+                                                }
+
+                                                Text {
+                                                    visible: IntegrationService.error !== ""
+                                                    Layout.fillWidth: true
+                                                    text: IntegrationService.error
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+                                                    ActionButton {
+                                                        label: "Connect"
+                                                        primary: true
+                                                        visible: !IntegrationService.syncStatus.connected
+                                                        enabled: !IntegrationService.busy && !IntegrationService.syncStatus.connecting && IntegrationService.activeProvider !== ""
+                                                        onClicked: IntegrationService.connectSync(IntegrationService.activeProvider)
+                                                    }
+                                                    ActionButton {
+                                                        label: "Sync now"
+                                                        primary: true
+                                                        visible: IntegrationService.syncStatus.connected
+                                                        enabled: IntegrationService.syncStatus.connected && !IntegrationService.busy
+                                                        onClicked: IntegrationService.syncNow()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Disconnect"
+                                                        visible: IntegrationService.syncStatus.connected
+                                                        enabled: IntegrationService.syncStatus.connected && !IntegrationService.busy
+                                                        onClicked: IntegrationService.disconnectSync()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            text: "Phone"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: phoneCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: phoneCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 14
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 12
+
+                                                    Rectangle {
+                                                        Layout.preferredWidth: 44
+                                                        Layout.preferredHeight: 44
+                                                        radius: 22
+                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                        border.width: 1
+                                                        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+                                                        SvgIcon {
+                                                            anchors.centerIn: parent
+                                                            iconSource: "assets/icons/devices.svg"
+                                                            iconSize: 22
+                                                            iconColor: settingsRoot.textPrimary
+                                                        }
+                                                    }
+
+                                                    ColumnLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: 2
+                                                        Text {
+                                                            text: "KDE Connect"
+                                                            font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                            color: settingsRoot.textPrimary
+                                                        }
+                                                        Text {
+                                                            text: IntegrationService.phoneStatus.available
+                                                                  ? "Connect a phone for desktop integration"
+                                                                  : IntegrationService.phoneStatus.message
+                                                        font.pixelSize: 12; font.family: "Google Sans"
+                                                        color: settingsRoot.textSecondary
+                                                        wrapMode: Text.WordWrap
+                                                        Layout.fillWidth: true
+                                                        }
+                                                    }
+
+                                                    StatusPill {
+                                                        label: IntegrationService.phoneStatus.connected ? "Connected" : "Disconnected"
+                                                        active: IntegrationService.phoneStatus.connected
+                                                    }
+                                                }
+
+                                                Rectangle { Layout.fillWidth: true; height: 1; color: settingsRoot.dividerColor }
+
+                                                InfoRow {
+                                                    label: "Device name"
+                                                    value: IntegrationService.phoneStatus.deviceName || "No device"
+                                                }
+                                                InfoRow {
+                                                    label: "Battery level"
+                                                    value: IntegrationService.phoneStatus.batteryLevel || "Unknown"
+                                                }
+                                                InfoRow {
+                                                    label: "Device type"
+                                                    value: IntegrationService.phoneStatus.deviceType || "Unknown"
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+                                                    ActionButton {
+                                                        label: IntegrationService.phoneStatus.connected ? "Refresh" : "Connect"
+                                                        primary: true
+                                                        enabled: IntegrationService.phoneStatus.available && !IntegrationService.busy
+                                                        onClicked: IntegrationService.connectPhone()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Disconnect"
+                                                        enabled: IntegrationService.phoneStatus.connected && !IntegrationService.busy
+                                                        onClicked: IntegrationService.disconnectPhone()
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
 
