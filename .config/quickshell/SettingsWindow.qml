@@ -964,9 +964,9 @@ FloatingWindow {
                                                 }
 
                                                 Text {
-                                                    visible: IntegrationService.error !== ""
+                                                    visible: IntegrationService.syncStatus.message !== "" || IntegrationService.error !== ""
                                                     Layout.fillWidth: true
-                                                    text: IntegrationService.error
+                                                    text: IntegrationService.error !== "" ? IntegrationService.error : IntegrationService.syncStatus.message
                                                     font.pixelSize: 12
                                                     font.family: "Google Sans"
                                                     color: settingsRoot.textSecondary

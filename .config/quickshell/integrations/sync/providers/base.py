@@ -41,6 +41,8 @@ class SyncProvider(ABC):
             "avatar": str(data.get("avatar", "")) if connected else "",
             "repository": str(data.get("repository", "")) if connected else "",
             "lastSync": str(data.get("last_sync", "")) if connected else "",
+            "message": str(data.get("message", "")),
+            "authSession": data.get("auth_session", {}) if isinstance(data.get("auth_session", {}), dict) else {},
         }
 
     @abstractmethod

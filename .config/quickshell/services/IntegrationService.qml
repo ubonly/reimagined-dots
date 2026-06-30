@@ -25,7 +25,9 @@ Singleton {
         username: "",
         avatar: "",
         repository: "",
-        lastSync: ""
+        lastSync: "",
+        message: "",
+        authSession: ({})
     })
     property var phoneStatus: ({
         available: false,

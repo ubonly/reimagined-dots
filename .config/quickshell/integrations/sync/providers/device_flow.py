@@ -17,11 +17,21 @@ class DeviceFlowProvider(SyncProvider):
 
     def connect(self, state: dict[str, Any]) -> dict[str, Any]:
         return {
-            "connection_state": "not_connected",
+            "connection_state": "connecting",
             "username": "",
             "avatar": "",
             "repository": "",
             "last_sync": "",
+            "message": "OAuth Device Flow is not implemented yet.",
+            "auth_session": {
+                "method": "device_flow",
+                "provider": self.provider_id,
+                "verification_uri": "",
+                "user_code": "",
+                "device_code": "",
+                "expires_at": "",
+                "implemented": False,
+            },
             "auth": {
                 "method": "device_flow",
                 "implemented": False,
@@ -31,7 +41,7 @@ class DeviceFlowProvider(SyncProvider):
     def sync(self, state: dict[str, Any]) -> dict[str, Any]:
         data = dict(state)
         if data.get("connection_state") != "connected":
-            return self.disconnect(data)
+            return data
         return data
 
     def disconnect(self, state: dict[str, Any]) -> dict[str, Any]:
@@ -41,5 +51,7 @@ class DeviceFlowProvider(SyncProvider):
             "avatar": "",
             "repository": "",
             "last_sync": "",
+            "message": "",
+            "auth_session": {},
             "auth": {},
         }
