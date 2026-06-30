@@ -25,7 +25,7 @@ class SyncProvider(ABC):
         auth = data.get("auth", {})
         connection_state = str(data.get("connection_state", "not_connected"))
 
-        if isinstance(auth, dict) and auth.get("mock"):
+        if connection_state == "connected" and not (isinstance(auth, dict) and auth.get("access_token")):
             connection_state = "not_connected"
         if connection_state not in {"not_connected", "connecting", "connected"}:
             connection_state = "not_connected"

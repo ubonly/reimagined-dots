@@ -16,7 +16,6 @@ DEFAULT_STATE: dict[str, Any] = {
     },
     "phone": {
         "selected_device_id": "",
-        "mock_connected": False,
     },
 }
 
@@ -51,4 +50,3 @@ def save_state(state: dict[str, Any]) -> None:
         json.dump(state, handle, indent=2, ensure_ascii=False)
         handle.write("\n")
     tmp.replace(STATE_PATH)
-

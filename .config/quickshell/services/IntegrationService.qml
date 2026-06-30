@@ -30,12 +30,19 @@ Singleton {
         authSession: ({})
     })
     property var phoneStatus: ({
+        installed: false,
+        daemonRunning: false,
         available: false,
         connected: false,
+        state: "unavailable",
+        devices: [],
         deviceName: "",
         batteryLevel: "",
         deviceType: "",
-        message: ""
+        message: "",
+        canRefresh: false,
+        canOpen: false,
+        canInstall: true
     })
 
     function refresh() {
@@ -69,14 +76,56 @@ Singleton {
     }
 
     function connectPhone() {
-        backendProc.action = "phone-connect"
+        backendProc.action = "phone-refresh"
         backendProc.args = []
         backendProc.running = true
     }
 
-    function disconnectPhone() {
-        backendProc.action = "phone-disconnect"
+    function refreshPhone() {
+        backendProc.action = "phone-refresh"
         backendProc.args = []
+        backendProc.running = true
+    }
+
+    function openKdeConnect() {
+        backendProc.action = "phone-open"
+        backendProc.args = []
+        backendProc.running = true
+    }
+
+    function installKdeConnect() {
+        backendProc.action = "phone-install"
+        backendProc.args = []
+        backendProc.running = true
+    }
+
+    function pairPhone(deviceId) {
+        backendProc.action = "phone-pair"
+        backendProc.args = [deviceId]
+        backendProc.running = true
+    }
+
+    function unpairPhone(deviceId) {
+        backendProc.action = "phone-unpair"
+        backendProc.args = [deviceId]
+        backendProc.running = true
+    }
+
+    function pingPhone(deviceId) {
+        backendProc.action = "phone-ping"
+        backendProc.args = [deviceId]
+        backendProc.running = true
+    }
+
+    function sendFilePhone(deviceId) {
+        backendProc.action = "phone-send-file"
+        backendProc.args = [deviceId]
+        backendProc.running = true
+    }
+
+    function disconnectPhone(deviceId) {
+        backendProc.action = "phone-disconnect"
+        backendProc.args = [deviceId]
         backendProc.running = true
     }
 
@@ -122,6 +171,36 @@ Singleton {
                     root.error = String(e)
                 }
             }
+        }
+    }
+
+    Process {
+        id: phoneWatchProc
+        command: ["python3", "-B", root.backendPath, "watch-phone"]
+        running: true
+
+        stdout: SplitParser {
+            onRead: function(line) {
+                if (line.trim().length === 0)
+                    return
+                try {
+                    root.applyPayload(JSON.parse(line.trim()))
+                } catch (e) {
+                    root.error = String(e)
+                }
+            }
+        }
+
+        onExited: phoneWatchRestart.start()
+    }
+
+    Timer {
+        id: phoneWatchRestart
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            if (!phoneWatchProc.running)
+                phoneWatchProc.running = true
         }
     }
 }

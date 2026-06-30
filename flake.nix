@@ -20,6 +20,11 @@
           home.packages = with pkgs; [
             quickshell
             matugen
+            (python3.withPackages (ps: [
+              ps.dbus-python
+              ps.pygobject3
+            ]))
+            kdePackages.kdeconnect-kde
             jq
             bc
             brightnessctl

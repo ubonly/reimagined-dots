@@ -9,6 +9,7 @@ from integrations.manager import IntegrationManager
 
 def print_json(payload: object) -> None:
     print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    sys.stdout.flush()
 
 
 def main(argv: list[str]) -> int:
@@ -28,10 +29,26 @@ def main(argv: list[str]) -> int:
             print_json({"sync": manager.sync.sync(), "phone": manager.phone.snapshot()})
         elif command == "sync-disconnect":
             print_json({"sync": manager.sync.disconnect(), "phone": manager.phone.snapshot()})
-        elif command == "phone-connect":
-            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.connect()})
+        elif command == "phone-refresh":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.refresh()})
+        elif command == "phone-open":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.open_kde_connect()})
+        elif command == "phone-install":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.install_kde_connect()})
+        elif command == "phone-pair":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.pair(argv[2])})
+        elif command == "phone-unpair":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.unpair(argv[2])})
+        elif command == "phone-ping":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.ping(argv[2])})
+        elif command == "phone-send-file":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.send_file(argv[2])})
         elif command == "phone-disconnect":
-            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.disconnect()})
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.disconnect(argv[2])})
+        elif command == "phone-connect":
+            print_json({"sync": manager.sync.snapshot(), "phone": manager.phone.refresh()})
+        elif command == "watch-phone":
+            manager.phone.watch(lambda phone: print_json({"phone": phone}))
         else:
             raise ValueError(f"Unknown command: {command}")
     except Exception as exc:

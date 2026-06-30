@@ -1050,51 +1050,171 @@ FloatingWindow {
                                                             color: settingsRoot.textPrimary
                                                         }
                                                         Text {
-                                                            text: IntegrationService.phoneStatus.available
-                                                                  ? "Connect a phone for desktop integration"
-                                                                  : IntegrationService.phoneStatus.message
-                                                        font.pixelSize: 12; font.family: "Google Sans"
-                                                        color: settingsRoot.textSecondary
-                                                        wrapMode: Text.WordWrap
-                                                        Layout.fillWidth: true
+                                                            text: IntegrationService.phoneStatus.message !== ""
+                                                                  ? IntegrationService.phoneStatus.message
+                                                                  : "Manage paired and reachable KDE Connect devices"
+                                                            font.pixelSize: 12; font.family: "Google Sans"
+                                                            color: settingsRoot.textSecondary
+                                                            wrapMode: Text.WordWrap
+                                                            Layout.fillWidth: true
                                                         }
                                                     }
 
                                                     StatusPill {
-                                                        label: IntegrationService.phoneStatus.connected ? "Connected" : "Disconnected"
+                                                        label: IntegrationService.phoneStatus.state === "unavailable"
+                                                               ? "Unavailable"
+                                                               : (IntegrationService.phoneStatus.state === "searching"
+                                                                  ? "Searching"
+                                                                  : (IntegrationService.phoneStatus.connected ? "Connected" : "Ready"))
                                                         active: IntegrationService.phoneStatus.connected
                                                     }
                                                 }
 
                                                 Rectangle { Layout.fillWidth: true; height: 1; color: settingsRoot.dividerColor }
 
-                                                InfoRow {
-                                                    label: "Device name"
-                                                    value: IntegrationService.phoneStatus.deviceName || "No device"
-                                                }
-                                                InfoRow {
-                                                    label: "Battery level"
-                                                    value: IntegrationService.phoneStatus.batteryLevel || "Unknown"
-                                                }
-                                                InfoRow {
-                                                    label: "Device type"
-                                                    value: IntegrationService.phoneStatus.deviceType || "Unknown"
-                                                }
-
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     spacing: 8
                                                     Item { Layout.fillWidth: true }
                                                     ActionButton {
-                                                        label: IntegrationService.phoneStatus.connected ? "Refresh" : "Connect"
+                                                        label: "Install KDE Connect"
                                                         primary: true
-                                                        enabled: IntegrationService.phoneStatus.available && !IntegrationService.busy
-                                                        onClicked: IntegrationService.connectPhone()
+                                                        visible: !IntegrationService.phoneStatus.installed
+                                                        enabled: !IntegrationService.busy
+                                                        onClicked: IntegrationService.installKdeConnect()
                                                     }
                                                     ActionButton {
-                                                        label: "Disconnect"
-                                                        enabled: IntegrationService.phoneStatus.connected && !IntegrationService.busy
-                                                        onClicked: IntegrationService.disconnectPhone()
+                                                        label: "Open KDE Connect"
+                                                        primary: !IntegrationService.phoneStatus.connected
+                                                        visible: IntegrationService.phoneStatus.installed
+                                                        enabled: !IntegrationService.busy && IntegrationService.phoneStatus.canOpen
+                                                        onClicked: IntegrationService.openKdeConnect()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Refresh"
+                                                        visible: IntegrationService.phoneStatus.installed
+                                                        enabled: !IntegrationService.busy && IntegrationService.phoneStatus.canRefresh
+                                                        onClicked: IntegrationService.refreshPhone()
+                                                    }
+                                                }
+
+                                                Text {
+                                                    visible: IntegrationService.phoneStatus.installed
+                                                             && IntegrationService.phoneStatus.daemonRunning
+                                                             && (!IntegrationService.phoneStatus.devices || IntegrationService.phoneStatus.devices.length === 0)
+                                                    Layout.fillWidth: true
+                                                    text: "No KDE Connect devices were found."
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                Repeater {
+                                                    model: IntegrationService.phoneStatus.devices || []
+
+                                                    delegate: Rectangle {
+                                                        required property var modelData
+
+                                                        Layout.fillWidth: true
+                                                        implicitHeight: deviceCardCol.implicitHeight + 24
+                                                        radius: 14
+                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.04)
+                                                        border.width: 1
+                                                        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.06)
+
+                                                        ColumnLayout {
+                                                            id: deviceCardCol
+                                                            anchors { fill: parent; margins: 12 }
+                                                            spacing: 10
+
+                                                            RowLayout {
+                                                                Layout.fillWidth: true
+                                                                spacing: 10
+
+                                                                Rectangle {
+                                                                    Layout.preferredWidth: 38
+                                                                    Layout.preferredHeight: 38
+                                                                    radius: 19
+                                                                    color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                                    SvgIcon {
+                                                                        anchors.centerIn: parent
+                                                                        iconSource: "assets/icons/devices.svg"
+                                                                        iconSize: 20
+                                                                        iconColor: settingsRoot.textPrimary
+                                                                    }
+                                                                }
+
+                                                                ColumnLayout {
+                                                                    Layout.fillWidth: true
+                                                                    spacing: 2
+                                                                    Text {
+                                                                        text: modelData.name || "Unknown device"
+                                                                        font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                                        color: settingsRoot.textPrimary
+                                                                        elide: Text.ElideRight
+                                                                        Layout.fillWidth: true
+                                                                    }
+                                                                    Text {
+                                                                        text: modelData.deviceType || "Unknown"
+                                                                        font.pixelSize: 12; font.family: "Google Sans"
+                                                                        color: settingsRoot.textSecondary
+                                                                    }
+                                                                }
+
+                                                                StatusPill {
+                                                                    label: modelData.status || "Device found"
+                                                                    active: modelData.state === "connected"
+                                                                }
+                                                            }
+
+                                                            Text {
+                                                                visible: modelData.batteryAvailable === true
+                                                                Layout.fillWidth: true
+                                                                text: "Battery " + modelData.batteryLevel + "%" + (modelData.charging ? " • Charging" : "")
+                                                                font.pixelSize: 12
+                                                                font.family: "Google Sans"
+                                                                color: settingsRoot.textSecondary
+                                                            }
+
+                                                            RowLayout {
+                                                                Layout.fillWidth: true
+                                                                spacing: 8
+                                                                Item { Layout.fillWidth: true }
+
+                                                                ActionButton {
+                                                                    label: "Pair"
+                                                                    primary: true
+                                                                    visible: !modelData.paired
+                                                                    enabled: modelData.actions && modelData.actions.pair && !IntegrationService.busy
+                                                                    onClicked: IntegrationService.pairPhone(modelData.id)
+                                                                }
+                                                                ActionButton {
+                                                                    label: "Send File"
+                                                                    visible: modelData.paired
+                                                                    enabled: modelData.actions && modelData.actions.sendFile && !IntegrationService.busy
+                                                                    onClicked: IntegrationService.sendFilePhone(modelData.id)
+                                                                }
+                                                                ActionButton {
+                                                                    label: "Ping"
+                                                                    visible: modelData.paired
+                                                                    enabled: modelData.actions && modelData.actions.ping && !IntegrationService.busy
+                                                                    onClicked: IntegrationService.pingPhone(modelData.id)
+                                                                }
+                                                                ActionButton {
+                                                                    label: "Unpair"
+                                                                    visible: modelData.paired
+                                                                    enabled: modelData.actions && modelData.actions.unpair && !IntegrationService.busy
+                                                                    onClicked: IntegrationService.unpairPhone(modelData.id)
+                                                                }
+                                                                ActionButton {
+                                                                    label: "Disconnect"
+                                                                    visible: modelData.paired
+                                                                    enabled: modelData.actions && modelData.actions.disconnect && !IntegrationService.busy
+                                                                    onClicked: IntegrationService.disconnectPhone(modelData.id)
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
