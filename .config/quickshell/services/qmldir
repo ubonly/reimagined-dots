@@ -7,3 +7,4 @@ singleton MprisService 1.0 MprisService.qml
 singleton NotificationService 1.0 NotificationService.qml
 singleton IntegrationService 1.0 IntegrationService.qml
 singleton UnlockTransitionService 1.0 UnlockTransitionService.qml
+singleton GoogleSyncService 1.0 GoogleSyncService.qml

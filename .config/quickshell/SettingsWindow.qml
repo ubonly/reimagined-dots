@@ -58,6 +58,9 @@ FloatingWindow {
     readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
+    property string googleDraftName: ""
+    property string googleDraftEmail: ""
+    property string googleDraftAvatar: ""
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -105,11 +108,21 @@ FloatingWindow {
         Quickshell.execDetached(["xdg-open", path]);
     }
 
+    function resetGoogleDrafts() {
+        googleDraftName = GoogleSyncService.displayName;
+        googleDraftEmail = GoogleSyncService.email;
+        googleDraftAvatar = GoogleSyncService.avatar;
+    }
+
+    function saveGoogleAccount() {
+        GoogleSyncService.saveLocalAccount(googleDraftName, googleDraftEmail, googleDraftAvatar);
+    }
+
     function clampSettingsPage(page) {
         var parsed = parseInt(page, 10);
         if (isNaN(parsed))
             return 3;
-        return Math.max(2, Math.min(7, parsed));
+        return Math.max(2, Math.min(8, parsed));
     }
 
     function restoreSettingsPage() {
@@ -133,6 +146,9 @@ FloatingWindow {
         }
         if (currentPage === 2) {
             IntegrationService.refresh();
+        }
+        if (currentPage === 8) {
+            resetGoogleDrafts();
         }
     }
 
@@ -521,6 +537,70 @@ FloatingWindow {
         }
     }
 
+    component GoogleTextField: RowLayout {
+        id: field
+        property string label: ""
+        property string textValue: ""
+        property string placeholder: ""
+        signal edited(string value)
+
+        Layout.fillWidth: true
+        spacing: 16
+
+        Text {
+            text: field.label
+            font.pixelSize: 13
+            font.family: "Google Sans"
+            font.weight: Font.Medium
+            color: settingsRoot.textPrimary
+            Layout.preferredWidth: 150
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 38
+            radius: 12
+            color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.06)
+            border.width: 1
+            border.color: input.activeFocus
+                          ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.55)
+                          : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+
+            TextInput {
+                id: input
+                anchors {
+                    fill: parent
+                    leftMargin: 12
+                    rightMargin: 12
+                }
+                verticalAlignment: TextInput.AlignVCenter
+                text: field.textValue
+                color: settingsRoot.textPrimary
+                selectionColor: Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.30)
+                selectedTextColor: settingsRoot.textPrimary
+                font.pixelSize: 12
+                font.family: "Google Sans"
+                clip: true
+                selectByMouse: true
+                onTextChanged: field.edited(text)
+            }
+
+            Text {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: 12
+                }
+                text: field.placeholder
+                color: settingsRoot.textSecondary
+                font.pixelSize: 12
+                font.family: "Google Sans"
+                visible: input.text === "" && !input.activeFocus
+            }
+        }
+    }
+
     // ── ThemeCard (Cloud) ──────────────────────────────────────────────────
     component ThemeCard: Rectangle {
         id: tCard
@@ -756,6 +836,7 @@ FloatingWindow {
 
 
                         NavItem { navIconSource: "assets/icons/devices-other.svg";      navTitle: "Integrations";        navSub: "Sync, phone, providers";       navIndex: 2 }
+                        NavItem { navIconSource: "assets/icons/account-circle.svg";     navTitle: "Google sync";         navSub: "Account, lock screen";         navIndex: 8 }
                         NavItem { navIconSource: "assets/icons/wallpaper.svg";          navTitle: "Wallpaper and style"; navSub: "Dark theme, screen saver";     navIndex: 3 }
                         NavItem { navIconSource: "assets/icons/apps.svg";               navTitle: "Dock";                navSub: "Shelf style and behavior";     navIndex: 4 }
                         NavItem { navIconSource: "assets/icons/accessibility.svg";      navTitle: "Accessibility";       navSub: "Screen reader, magnification"; navIndex: 5 }
@@ -829,6 +910,7 @@ FloatingWindow {
                                         text: {
                                             var titles = ["","","Integrations","Wallpaper and style",
                                                 "Dock","Accessibility","System preferences","About your system"]
+                                            titles[8] = "Google sync"
                                             return titles[settingsRoot.currentPage] || "Settings"
                                         }
                                         font.pixelSize: 15; font.family: "Google Sans"
@@ -841,7 +923,7 @@ FloatingWindow {
                                     Item {
                                         Layout.fillWidth: true
                                         implicitHeight: 120
-                                         visible: settingsRoot.currentPage !== 2 && settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7
+                                         visible: settingsRoot.currentPage !== 2 && settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7 && settingsRoot.currentPage !== 8
                                         Text {
                                             anchors.centerIn: parent
                                             text: "Coming soon"
@@ -1216,6 +1298,252 @@ FloatingWindow {
                                                             }
                                                         }
                                                     }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // PAGE 3: Wallpaper and style
+                                    ColumnLayout {
+                                        visible: settingsRoot.currentPage === 8
+                                        Layout.fillWidth: true
+                                        spacing: 12
+
+                                        Text {
+                                            text: "Account"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: googleAccountCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: googleAccountCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 14
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 12
+
+                                                    Rectangle {
+                                                        Layout.preferredWidth: 44
+                                                        Layout.preferredHeight: 44
+                                                        radius: 22
+                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                        border.width: 1
+                                                        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+
+                                                        Image {
+                                                            id: googlePreviewAvatar
+                                                            anchors.fill: parent
+                                                            source: GoogleSyncService.avatar !== ""
+                                                                ? (GoogleSyncService.avatar.startsWith("/") ? "file://" + GoogleSyncService.avatar : GoogleSyncService.avatar)
+                                                                : ""
+                                                            sourceSize: Qt.size(44, 44)
+                                                            fillMode: Image.PreserveAspectCrop
+                                                            smooth: true
+                                                            visible: GoogleSyncService.connected && source !== "" && status === Image.Ready
+                                                        }
+
+                                                        Text {
+                                                            anchors.centerIn: parent
+                                                            text: GoogleSyncService.displayName !== "" ? GoogleSyncService.displayName[0].toUpperCase() : "G"
+                                                            color: settingsRoot.textPrimary
+                                                            font.pixelSize: 18
+                                                            font.family: "Google Sans"
+                                                            font.weight: Font.Bold
+                                                            visible: !googlePreviewAvatar.visible
+                                                        }
+                                                    }
+
+                                                    ColumnLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: 2
+                                                        Text {
+                                                            text: GoogleSyncService.connected
+                                                                  ? GoogleSyncService.displayName
+                                                                  : "Google account"
+                                                            font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
+                                                            color: settingsRoot.textPrimary
+                                                        }
+                                                        Text {
+                                                            text: GoogleSyncService.connected
+                                                                  ? (GoogleSyncService.email !== "" ? GoogleSyncService.email : "Connected locally")
+                                                                  : "Sign in state for Google-powered shell features"
+                                                            font.pixelSize: 12; font.family: "Google Sans"
+                                                            color: settingsRoot.textSecondary
+                                                            wrapMode: Text.WordWrap
+                                                            Layout.fillWidth: true
+                                                        }
+                                                    }
+
+                                                    StatusPill {
+                                                        label: GoogleSyncService.connecting
+                                                               ? "Connecting"
+                                                               : (GoogleSyncService.connected ? "Connected" : "Not connected")
+                                                        active: GoogleSyncService.connected
+                                                    }
+                                                }
+
+                                                Rectangle { Layout.fillWidth: true; height: 1; color: settingsRoot.dividerColor }
+
+                                                Text {
+                                                    visible: GoogleSyncService.message !== ""
+                                                    Layout.fillWidth: true
+                                                    text: GoogleSyncService.message
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+                                                    ActionButton {
+                                                        label: GoogleSyncService.connecting ? "Waiting for OAuth" : "Sign in"
+                                                        primary: true
+                                                        visible: !GoogleSyncService.connected
+                                                        enabled: !GoogleSyncService.connecting
+                                                        onClicked: GoogleSyncService.beginConnect()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Sync now"
+                                                        primary: true
+                                                        visible: GoogleSyncService.connected
+                                                        onClicked: GoogleSyncService.syncNow()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Disconnect"
+                                                        visible: GoogleSyncService.connected || GoogleSyncService.connecting
+                                                        onClicked: GoogleSyncService.disconnect()
+                                                    }
+                                                }
+
+                                                InfoRow {
+                                                    visible: GoogleSyncService.connected
+                                                    label: "Last sync"
+                                                    value: GoogleSyncService.lastSync || "Never"
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            text: "Local account details"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: googleDetailsCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: googleDetailsCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 12
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Real Google OAuth is not wired yet. These values are saved locally and used by Reimagined shell features."
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                GoogleTextField {
+                                                    label: "Google name"
+                                                    textValue: settingsRoot.googleDraftName
+                                                    placeholder: "Your Google display name"
+                                                    onEdited: function(value) { settingsRoot.googleDraftName = value }
+                                                }
+
+                                                GoogleTextField {
+                                                    label: "Google email"
+                                                    textValue: settingsRoot.googleDraftEmail
+                                                    placeholder: "you@gmail.com"
+                                                    onEdited: function(value) { settingsRoot.googleDraftEmail = value }
+                                                }
+
+                                                GoogleTextField {
+                                                    label: "Profile picture URL"
+                                                    textValue: settingsRoot.googleDraftAvatar
+                                                    placeholder: "https://... or /home/.../avatar.png"
+                                                    onEdited: function(value) { settingsRoot.googleDraftAvatar = value }
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+                                                    ActionButton {
+                                                        label: "Save account"
+                                                        primary: true
+                                                        enabled: settingsRoot.googleDraftName.trim() !== ""
+                                                        onClicked: settingsRoot.saveGoogleAccount()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            visible: GoogleSyncService.connected
+                                            text: "Lock screen"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            visible: GoogleSyncService.connected
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: googleLockCol.implicitHeight
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: googleLockCol
+                                                anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+                                                spacing: 0
+
+                                                SettingsRow {
+                                                    iconSource: "assets/icons/account-circle.svg"
+                                                    title: "Change lock screen profile picture to Google profile picture"
+                                                    subtitle: "Uses the saved Google profile picture on the lock screen"
+                                                    hasSwitch: true
+                                                    switchVal: GoogleSyncService.useProfilePicture
+                                                    showDivider: true
+                                                    onSwitchToggled: GoogleSyncService.setUseProfilePicture(!GoogleSyncService.useProfilePicture)
+                                                }
+
+                                                SettingsRow {
+                                                    iconSource: "assets/icons/account-circle.svg"
+                                                    title: "Change your system name to Google name"
+                                                    subtitle: "For now this only changes the name on the lock screen"
+                                                    hasSwitch: true
+                                                    switchVal: GoogleSyncService.useDisplayName
+                                                    showDivider: false
+                                                    onSwitchToggled: GoogleSyncService.setUseDisplayName(!GoogleSyncService.useDisplayName)
                                                 }
                                             }
                                         }

@@ -26,6 +26,8 @@ Scope {
     property string wifiPassSsid: ""
     property string wifiPassError: ""
     property string username: Quickshell.env("USER") || "user"
+    readonly property string lockDisplayName: GoogleSyncService.lockScreenName(username)
+    readonly property string lockAvatarSource: GoogleSyncService.lockScreenAvatar()
     property string batteryText: ""
 
     function wallpaperUrl() {
@@ -414,20 +416,32 @@ Scope {
                             color: Qt.rgba(1, 1, 1, 0.18)
                             border.width: 1
                             border.color: Qt.rgba(1, 1, 1, 0.26)
+                            clip: true
+
+                            Image {
+                                id: googleAvatar
+                                anchors.fill: parent
+                                source: root.lockAvatarSource
+                                sourceSize: Qt.size(112, 112)
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                                visible: root.lockAvatarSource !== "" && status === Image.Ready
+                            }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: root.username.length > 0 ? root.username[0].toUpperCase() : "U"
+                                text: root.lockDisplayName.length > 0 ? root.lockDisplayName[0].toUpperCase() : "U"
                                 color: "white"
                                 font.pixelSize: 48
                                 font.family: "Google Sans"
                                 font.weight: Font.Bold
+                                visible: !googleAvatar.visible
                             }
                         }
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.username
+                            text: root.lockDisplayName
                             color: "white"
                             font.pixelSize: 24
                             font.family: "Google Sans"
