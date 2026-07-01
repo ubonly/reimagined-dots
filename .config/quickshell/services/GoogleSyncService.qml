@@ -16,14 +16,16 @@ Singleton {
     readonly property string lastSync: ConfigService.ready ? ConfigService.values.googleSyncLastSync : ""
     readonly property bool useProfilePicture: ConfigService.ready && ConfigService.values.googleSyncUseProfilePicture
     readonly property bool useDisplayName: ConfigService.ready && ConfigService.values.googleSyncUseDisplayName
+    readonly property string authUrl: "https://accounts.google.com/"
     readonly property string message: connecting
-        ? "Google OAuth is not implemented yet. Save account details locally to test shell integration."
+        ? "Google sign-in was opened in your browser. OAuth callback is not implemented yet, so save account details locally to test shell integration."
         : ""
 
     function beginConnect() {
         if (!ConfigService.ready)
             return
         ConfigService.values.googleSyncState = "connecting"
+        Quickshell.execDetached(["xdg-open", authUrl])
     }
 
     function saveLocalAccount(name, emailAddress, avatarUrl) {

@@ -1411,10 +1411,9 @@ FloatingWindow {
                                                     spacing: 8
                                                     Item { Layout.fillWidth: true }
                                                     ActionButton {
-                                                        label: GoogleSyncService.connecting ? "Waiting for OAuth" : "Sign in"
+                                                        label: GoogleSyncService.connecting ? "Open sign-in again" : "Sign in"
                                                         primary: true
                                                         visible: !GoogleSyncService.connected
-                                                        enabled: !GoogleSyncService.connecting
                                                         onClicked: GoogleSyncService.beginConnect()
                                                     }
                                                     ActionButton {
@@ -1461,7 +1460,7 @@ FloatingWindow {
 
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Real Google OAuth is not wired yet. These values are saved locally and used by Reimagined shell features."
+                                                    text: "Google sign-in opens in your browser, but OAuth callback is not wired yet. These values are saved locally and used by Reimagined shell features."
                                                     font.pixelSize: 12
                                                     font.family: "Google Sans"
                                                     color: settingsRoot.textSecondary
