@@ -184,6 +184,8 @@ PanelWindow {
     property var filteredApps: []
     property string searchText: ""
     property int activeIndex: 0
+    property string activeSection: "apps"
+    property int recentIndex: 0
     property string _buf: ""
     readonly property int maxSearchResults: 12
     readonly property var searchAliases: ({
@@ -197,6 +199,106 @@ PanelWindow {
         "term": ["terminal", "kitty", "foot", "konsole"],
         "fm": ["file manager", "files", "nautilus", "dolphin", "thunar"]
     })
+
+    function recentVisible() {
+        return searchText === "" && recentApps.length > 0
+    }
+
+    function clampRecentIndex() {
+        recentIndex = Math.max(0, Math.min(recentIndex, recentApps.length - 1))
+    }
+
+    function lastRowIndexForColumn(column) {
+        if (filteredApps.length === 0)
+            return 0
+
+        var cols = appScroll.columns
+        var last = filteredApps.length - 1
+        var lastRowStart = Math.floor(last / cols) * cols
+        return Math.min(lastRowStart + Math.max(0, column), last)
+    }
+
+    function selectRecent(column) {
+        if (!recentVisible())
+            return false
+
+        activeSection = "recent"
+        recentIndex = Math.min(Math.max(0, column), recentApps.length - 1)
+        appScroll.scrollToTop()
+        return true
+    }
+
+    function selectApp(index, animated) {
+        if (filteredApps.length === 0)
+            return false
+
+        activeSection = "apps"
+        activeIndex = Math.max(0, Math.min(index, filteredApps.length - 1))
+        if (animated)
+            appScroll.scrollToIndex(activeIndex)
+        else
+            appScroll.ensureActiveVisible()
+        return true
+    }
+
+    function selectBottomFromColumn(column) {
+        if (filteredApps.length === 0)
+            return false
+
+        activeSection = "apps"
+        activeIndex = lastRowIndexForColumn(column)
+        appScroll.scrollToBottom()
+        return true
+    }
+
+    function moveSelection(key) {
+        var cols = appScroll.columns
+        var maxIdx = filteredApps.length - 1
+
+        if (key === Qt.Key_Right) {
+            if (activeSection === "recent" && recentVisible())
+                recentIndex = Math.min(recentIndex + 1, recentApps.length - 1)
+            else
+                selectApp(Math.min(activeIndex + 1, maxIdx), false)
+            return true
+        }
+
+        if (key === Qt.Key_Left) {
+            if (activeSection === "recent" && recentVisible())
+                recentIndex = Math.max(recentIndex - 1, 0)
+            else
+                selectApp(Math.max(activeIndex - 1, 0), false)
+            return true
+        }
+
+        if (key === Qt.Key_Down) {
+            if (activeSection === "recent" && recentVisible())
+                return selectApp(Math.min(recentIndex, maxIdx), false)
+
+            if (activeIndex + cols <= maxIdx)
+                return selectApp(activeIndex + cols, false)
+
+            var downColumn = activeIndex % cols
+            if (selectRecent(downColumn))
+                return true
+            return selectApp(Math.min(downColumn, maxIdx), true)
+        }
+
+        if (key === Qt.Key_Up) {
+            if (activeSection === "recent" && recentVisible())
+                return selectBottomFromColumn(recentIndex)
+
+            if (activeIndex - cols >= 0)
+                return selectApp(activeIndex - cols, false)
+
+            var upColumn = activeIndex % cols
+            if (selectRecent(upColumn))
+                return true
+            return selectBottomFromColumn(upColumn)
+        }
+
+        return false
+    }
 
     Process {
         id: listProc
@@ -419,6 +521,8 @@ PanelWindow {
         if (!isOpen) {
             searchText = ""
             activeIndex = 0
+            activeSection = "apps"
+            recentIndex = 0
             filterApps()
             searchInput.text = ""
             appScroll.contentY = 0
@@ -586,31 +690,22 @@ PanelWindow {
                         onTextChanged: {
                             launcher.searchText = text
                             launcher.activeIndex = 0
+                            launcher.activeSection = "apps"
+                            launcher.recentIndex = 0
                             launcher.filterApps()
                         }
 
                         Keys.onEscapePressed: launcher.isOpen = false
                         
                         Keys.onPressed: function(event) {
-                            if (launcher.filteredApps.length === 0) return;
-
-                            var cols = appScroll.columns
-                            var maxIdx = launcher.filteredApps.length - 1
-
-                            if (event.key === Qt.Key_Right) {
-                                launcher.activeIndex = Math.min(launcher.activeIndex + 1, maxIdx)
-                                event.accepted = true
-                            } else if (event.key === Qt.Key_Left) {
-                                launcher.activeIndex = Math.max(launcher.activeIndex - 1, 0)
-                                event.accepted = true
-                            } else if (event.key === Qt.Key_Down) {
-                                launcher.activeIndex = Math.min(launcher.activeIndex + cols, maxIdx)
-                                event.accepted = true
-                            } else if (event.key === Qt.Key_Up) {
-                                launcher.activeIndex = Math.max(launcher.activeIndex - cols, 0)
-                                event.accepted = true
+                            if (event.key === Qt.Key_Right || event.key === Qt.Key_Left
+                                    || event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
+                                event.accepted = launcher.moveSelection(event.key)
                             } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                launcher.launchApp(launcher.filteredApps[launcher.activeIndex].exec)
+                                if (launcher.activeSection === "recent" && launcher.recentVisible())
+                                    launcher.launchApp(launcher.recentApps[launcher.recentIndex].exec)
+                                else if (launcher.filteredApps.length > 0)
+                                    launcher.launchApp(launcher.filteredApps[launcher.activeIndex].exec)
                                 event.accepted = true
                             }
                         }
@@ -645,7 +740,7 @@ PanelWindow {
                 model: launcher.filteredApps
                 cellWidth: width / columns
                 cellHeight: 110
-                currentIndex: launcher.activeIndex
+                currentIndex: launcher.activeSection === "apps" ? launcher.activeIndex : -1
                 reuseItems: true
                 boundsBehavior: Flickable.StopAtBounds
                 boundsMovement: Flickable.StopAtBounds
@@ -658,9 +753,36 @@ PanelWindow {
                 readonly property int columns: 5
                 readonly property bool scrolling: moving || dragging || flicking
 
+                NumberAnimation {
+                    id: wrapScrollAnimation
+                    target: appScroll
+                    property: "contentY"
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+
                 function ensureActiveVisible() {
                     if (launcher.filteredApps.length === 0) return
+                    if (launcher.activeSection !== "apps") return
                     positionViewAtIndex(launcher.activeIndex, GridView.Contain)
+                }
+
+                function animateContentY(value) {
+                    wrapScrollAnimation.stop()
+                    wrapScrollAnimation.to = Math.max(0, Math.min(value, Math.max(0, contentHeight - height)))
+                    wrapScrollAnimation.restart()
+                }
+
+                function scrollToTop() {
+                    animateContentY(0)
+                }
+
+                function scrollToBottom() {
+                    animateContentY(Math.max(0, contentHeight - height))
+                }
+
+                function scrollToIndex(index) {
+                    positionViewAtIndex(index, GridView.Contain)
                 }
 
                 header: Item {
@@ -695,8 +817,17 @@ PanelWindow {
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: 16
-                                    color: recentMouse.containsMouse ? launcher.hoverBg : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 90 } }
+                                    color: ((!appScroll.scrolling && recentMouse.containsMouse)
+                                            || (launcher.activeSection === "recent" && index === launcher.recentIndex))
+                                           ? launcher.hoverBg : "transparent"
+                                    border.color: (launcher.activeSection === "recent" && index === launcher.recentIndex)
+                                        ? Qt.rgba(1, 1, 1, 0.15)
+                                        : "transparent"
+                                    border.width: 1
+                                    Behavior on color {
+                                        enabled: !appScroll.scrolling
+                                        ColorAnimation { duration: 80 }
+                                    }
                                 }
 
                                 Column {
@@ -776,9 +907,12 @@ PanelWindow {
                     Rectangle {
                         anchors.fill: parent
                         radius: 16
-                        color: ((!appScroll.scrolling && cellMouse.containsMouse) || index === launcher.activeIndex)
+                        color: ((!appScroll.scrolling && cellMouse.containsMouse)
+                               || (launcher.activeSection === "apps" && index === launcher.activeIndex))
                                ? launcher.hoverBg : "transparent"
-                        border.color: (index === launcher.activeIndex) ? Qt.rgba(1, 1, 1, 0.15) : "transparent"
+                        border.color: (launcher.activeSection === "apps" && index === launcher.activeIndex)
+                            ? Qt.rgba(1, 1, 1, 0.15)
+                            : "transparent"
                         border.width: 1
                         Behavior on color {
                             enabled: !appScroll.scrolling
