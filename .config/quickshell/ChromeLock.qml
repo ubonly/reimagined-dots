@@ -330,9 +330,9 @@ Scope {
                 Item {
                     id: clockView
                     anchors.fill: parent
-                    opacity: root.unlockAnimating ? unlockTransition.lockWidgetsOpacity : (root.passwordView ? 0 : 1)
+                    opacity: root.unlockAnimating ? unlockTransition.lockWidgetsOpacity : 1
                     visible: opacity > 0
-                    y: root.unlockAnimating ? unlockTransition.lockWidgetsY : (root.passwordView ? -48 : 0)
+                    y: root.unlockAnimating ? unlockTransition.lockWidgetsY : 0
                     scale: root.unlockAnimating ? unlockTransition.lockClockScale : 1
                     transformOrigin: Item.Center
 
