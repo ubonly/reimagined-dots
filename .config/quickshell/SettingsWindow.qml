@@ -61,6 +61,7 @@ FloatingWindow {
     property string googleDraftName: ""
     property string googleDraftEmail: ""
     property string googleDraftAvatar: ""
+    property string googleDraftClientId: ""
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -112,10 +113,15 @@ FloatingWindow {
         googleDraftName = GoogleSyncService.displayName;
         googleDraftEmail = GoogleSyncService.email;
         googleDraftAvatar = GoogleSyncService.avatar;
+        googleDraftClientId = GoogleSyncService.oauthClientId;
     }
 
     function saveGoogleAccount() {
         GoogleSyncService.saveLocalAccount(googleDraftName, googleDraftEmail, googleDraftAvatar);
+    }
+
+    function saveGoogleOAuthClientId() {
+        GoogleSyncService.saveOAuthClientId(googleDraftClientId);
     }
 
     function clampSettingsPage(page) {
@@ -1411,10 +1417,16 @@ FloatingWindow {
                                                     spacing: 8
                                                     Item { Layout.fillWidth: true }
                                                     ActionButton {
-                                                        label: GoogleSyncService.connecting ? "Open sign-in again" : "Sign in"
+                                                        label: GoogleSyncService.connecting ? "Waiting for browser" : "Sign in"
                                                         primary: true
+                                                        enabled: GoogleSyncService.canStartAuth
                                                         visible: !GoogleSyncService.connected
                                                         onClicked: GoogleSyncService.beginConnect()
+                                                    }
+                                                    ActionButton {
+                                                        label: "Open in browser"
+                                                        visible: GoogleSyncService.connecting && GoogleSyncService.authUrl !== ""
+                                                        onClicked: GoogleSyncService.openAuthUrl()
                                                     }
                                                     ActionButton {
                                                         label: "Sync now"
@@ -1434,11 +1446,71 @@ FloatingWindow {
                                                     label: "Last sync"
                                                     value: GoogleSyncService.lastSync || "Never"
                                                 }
+                                                InfoRow {
+                                                    visible: GoogleSyncService.connected && GoogleSyncService.tokenExpiresAt !== ""
+                                                    label: "Token expires"
+                                                    value: GoogleSyncService.tokenExpiresAt
+                                                }
                                             }
                                         }
 
                                         Text {
-                                            text: "Local account details"
+                                            text: "OAuth setup"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: googleOAuthCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: googleOAuthCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 12
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Real Google sign-in requires your own Google OAuth Desktop client ID. Reimagined does not ship a shared Google OAuth client."
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                GoogleTextField {
+                                                    label: "Client ID"
+                                                    textValue: settingsRoot.googleDraftClientId
+                                                    placeholder: "Desktop OAuth client ID"
+                                                    onEdited: function(value) { settingsRoot.googleDraftClientId = value }
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+                                                    ActionButton {
+                                                        label: "Open Google Cloud"
+                                                        onClicked: settingsRoot.openPath("https://console.cloud.google.com/apis/credentials")
+                                                    }
+                                                    ActionButton {
+                                                        label: "Save client ID"
+                                                        primary: true
+                                                        enabled: settingsRoot.googleDraftClientId.trim() !== GoogleSyncService.oauthClientId
+                                                        onClicked: settingsRoot.saveGoogleOAuthClientId()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            text: "Manual fallback"
                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                             color: settingsRoot.activeItem
                                             Layout.leftMargin: 12; Layout.topMargin: 8
@@ -1460,7 +1532,7 @@ FloatingWindow {
 
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Google sign-in opens in your browser, but OAuth callback is not wired yet. These values are saved locally and used by Reimagined shell features."
+                                                    text: "Use this only when OAuth is not configured yet. These values are saved locally and used by Reimagined shell features."
                                                     font.pixelSize: 12
                                                     font.family: "Google Sans"
                                                     color: settingsRoot.textSecondary
