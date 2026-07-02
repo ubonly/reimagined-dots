@@ -131,7 +131,7 @@ ProviderState GoogleProvider::login(const ProgressCallback &progress) {
     QString callbackError;
 
     QTcpServer server;
-    if (!server.listen(QHostAddress::LocalHost, 0))
+    if (!server.listen(QHostAddress::LocalHostIPv4, 0))
         return disconnectedState("Could not start local OAuth callback server: " + server.errorString());
 
     const QString redirectUri = QStringLiteral("http://127.0.0.1:%1/oauth2callback").arg(server.serverPort());
