@@ -80,9 +80,35 @@ Singleton {
         return ""
     }
 
+    onUseGoogleAvatarChanged: {
+        updateSystemAvatar()
+    }
+
+    function updateSystemAvatar() {
+        if (!ready)
+            return
+
+        let avatarPath = google.avatar
+        let enabled = useGoogleAvatar && googleLoggedIn && avatarPath !== ""
+
+        let script = ConfigService.configDir + "/accounts/update_system_avatar.sh"
+        let args = []
+        if (enabled) {
+            args.push("apply")
+            args.push(avatarPath)
+        } else {
+            args.push("restore")
+        }
+
+        Quickshell.execDetached([script].concat(args))
+    }
+
     function applyPayload(payload) {
         if (payload.provider !== "google")
             return
+
+        let oldLoggedIn = root.google.loggedIn
+        let oldAvatar = root.google.avatar
 
         root.google = {
             provider: payload.provider || "google",
@@ -98,6 +124,10 @@ Singleton {
         }
         root.error = root.google.error || ""
         root.ready = true
+
+        if (root.google.loggedIn !== oldLoggedIn || root.google.avatar !== oldAvatar) {
+            updateSystemAvatar()
+        }
     }
 
     Component.onCompleted: refresh()
