@@ -174,7 +174,7 @@ OAuthResult GoogleOAuthService::login(const ProgressCallback &progress) {
     QOAuth2AuthorizationCodeFlow oauth(&network_);
     configureGoogleFlow(&oauth, cid);
 
-    QOAuthHttpServerReplyHandler replyHandler(QHostAddress::LocalHost, 0);
+    QOAuthHttpServerReplyHandler replyHandler;
     replyHandler.setCallbackText(QStringLiteral(
         "<!doctype html><meta charset='utf-8'>"
         "<title>Reimagined Google Account</title>"
@@ -184,7 +184,7 @@ OAuthResult GoogleOAuthService::login(const ProgressCallback &progress) {
         "</style><main><h2>Google account connected</h2>"
         "<p>You can close this tab and return to Reimagined Settings.</p></main>"));
 
-    if (!replyHandler.isListening()) {
+    if (!replyHandler.isListening() && !replyHandler.listen(QHostAddress::LocalHost, 0)) {
         result.error = "Could not start local OAuth callback server.";
         return result;
     }
