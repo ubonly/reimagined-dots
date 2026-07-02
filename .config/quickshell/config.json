@@ -1,4 +1,6 @@
 {
+    "accountUseGoogleAvatar": false,
+    "accountUseGoogleDisplayName": false,
     "dnd": false,
     "dockIconFillEnabled": true,
     "dockOpacity": 0.85,

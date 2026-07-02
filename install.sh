@@ -139,7 +139,18 @@ else
     cp -r "$SCRIPT_DIR/.config/matugen" "$MATUGEN_DIR"
 fi
 
-# ─── 5. Создаём директорию для обоев ───────────────────────────────────────
+# ─── 5. Собираем нативные helper'ы ──────────────────────────────────────────
+if [ -x "$CONFIG_DIR/accounts/build.sh" ]; then
+    echo ""
+    echo "Сборка Account Provider helper..."
+    if "$CONFIG_DIR/accounts/build.sh"; then
+        echo "Account Provider helper собран."
+    else
+        echo "⚠️ Не удалось собрать Account Provider helper. Google account останется отключенным."
+    fi
+fi
+
+# ─── 6. Создаём директорию для обоев ───────────────────────────────────────
 mkdir -p "$HOME/Pictures/Wallpapers"
 
 echo ""

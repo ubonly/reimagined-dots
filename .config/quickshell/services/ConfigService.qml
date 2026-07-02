@@ -73,16 +73,8 @@ Singleton {
             property real settingsWindowY: -1
             property real clipboardWindowX: -1
             property real clipboardWindowY: -1
-            property string googleSyncState: "not_connected"
-            property string googleOAuthClientId: ""
-            property string googleSyncName: ""
-            property string googleSyncEmail: ""
-            property string googleSyncAvatar: ""
-            property string googleSyncLastSync: ""
-            property string googleSyncMessage: ""
-            property string googleSyncTokenExpiresAt: ""
-            property bool googleSyncUseProfilePicture: false
-            property bool googleSyncUseDisplayName: false
+            property bool accountUseGoogleAvatar: false
+            property bool accountUseGoogleDisplayName: false
         }
     }
 }

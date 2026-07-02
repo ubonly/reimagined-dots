@@ -34,6 +34,12 @@ FEDORA_PACKAGES=(
     "blueman"
     "google-roboto-fonts"
     "hyprpaper"
+    "cmake"
+    "ninja-build"
+    "gcc-c++"
+    "pkgconf-pkg-config"
+    "qt6-qtbase-devel"
+    "libsecret-devel"
 )
 
 # Проверяем наличие установленного tuned-ppd или power-profiles-daemon, чтобы избежать конфликтов
@@ -180,6 +186,8 @@ COMMANDS=(
     "kdeconnectd:kde-connect"
     "curl:curl"
     "zenity:zenity"
+    "cmake:cmake"
+    "ninja:ninja-build"
     "killall:psmisc"
 )
 

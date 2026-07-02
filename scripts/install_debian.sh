@@ -35,6 +35,12 @@ DEBIAN_PACKAGES=(
     "power-profiles-daemon"
     "fonts-roboto"
     "hyprpaper"
+    "cmake"
+    "ninja-build"
+    "g++"
+    "pkg-config"
+    "qt6-base-dev"
+    "libsecret-1-dev"
 )
 
 echo "Установка системных пакетов Debian/Ubuntu через apt..."
@@ -174,6 +180,8 @@ COMMANDS=(
     "kdeconnectd:kdeconnect"
     "curl:curl"
     "zenity:zenity"
+    "cmake:cmake"
+    "ninja:ninja-build"
     "killall:psmisc"
 )
 

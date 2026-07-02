@@ -32,6 +32,12 @@
             psmisc
             procps
             xdg-utils
+            cmake
+            ninja
+            pkg-config
+            gcc
+            qt6.qtbase
+            libsecret
             grim
             ffmpeg
             wf-recorder

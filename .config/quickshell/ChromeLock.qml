@@ -26,8 +26,8 @@ Scope {
     property string wifiPassSsid: ""
     property string wifiPassError: ""
     property string username: Quickshell.env("USER") || "user"
-    readonly property string lockDisplayName: GoogleSyncService.lockScreenName(username)
-    readonly property string lockAvatarSource: GoogleSyncService.lockScreenAvatar()
+    readonly property string lockDisplayName: AccountService.displayName(username)
+    readonly property string lockAvatarSource: AccountService.avatar()
     property string batteryText: ""
 
     function wallpaperUrl() {

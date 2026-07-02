@@ -58,10 +58,6 @@ FloatingWindow {
     readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
-    property string googleDraftName: ""
-    property string googleDraftEmail: ""
-    property string googleDraftAvatar: ""
-    property string googleDraftClientId: ""
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -109,21 +105,6 @@ FloatingWindow {
         Quickshell.execDetached(["xdg-open", path]);
     }
 
-    function resetGoogleDrafts() {
-        googleDraftName = GoogleSyncService.displayName;
-        googleDraftEmail = GoogleSyncService.email;
-        googleDraftAvatar = GoogleSyncService.avatar;
-        googleDraftClientId = GoogleSyncService.oauthClientId;
-    }
-
-    function saveGoogleAccount() {
-        GoogleSyncService.saveLocalAccount(googleDraftName, googleDraftEmail, googleDraftAvatar);
-    }
-
-    function saveGoogleOAuthClientId() {
-        GoogleSyncService.saveOAuthClientId(googleDraftClientId);
-    }
-
     function clampSettingsPage(page) {
         var parsed = parseInt(page, 10);
         if (isNaN(parsed))
@@ -154,7 +135,7 @@ FloatingWindow {
             IntegrationService.refresh();
         }
         if (currentPage === 8) {
-            resetGoogleDrafts();
+            AccountService.refresh();
         }
     }
 
@@ -540,70 +521,6 @@ FloatingWindow {
             font.pixelSize: 11
             font.family: "Google Sans"
             font.weight: Font.Medium
-        }
-    }
-
-    component GoogleTextField: RowLayout {
-        id: field
-        property string label: ""
-        property string textValue: ""
-        property string placeholder: ""
-        signal edited(string value)
-
-        Layout.fillWidth: true
-        spacing: 16
-
-        Text {
-            text: field.label
-            font.pixelSize: 13
-            font.family: "Google Sans"
-            font.weight: Font.Medium
-            color: settingsRoot.textPrimary
-            Layout.preferredWidth: 150
-            Layout.alignment: Qt.AlignVCenter
-        }
-
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: 38
-            radius: 12
-            color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.06)
-            border.width: 1
-            border.color: input.activeFocus
-                          ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.55)
-                          : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
-
-            TextInput {
-                id: input
-                anchors {
-                    fill: parent
-                    leftMargin: 12
-                    rightMargin: 12
-                }
-                verticalAlignment: TextInput.AlignVCenter
-                text: field.textValue
-                color: settingsRoot.textPrimary
-                selectionColor: Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.30)
-                selectedTextColor: settingsRoot.textPrimary
-                font.pixelSize: 12
-                font.family: "Google Sans"
-                clip: true
-                selectByMouse: true
-                onTextChanged: field.edited(text)
-            }
-
-            Text {
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
-                    leftMargin: 12
-                }
-                text: field.placeholder
-                color: settingsRoot.textSecondary
-                font.pixelSize: 12
-                font.family: "Google Sans"
-                visible: input.text === "" && !input.activeFocus
-            }
         }
     }
 
@@ -1309,7 +1226,7 @@ FloatingWindow {
                                         }
                                     }
 
-                                    // PAGE 3: Wallpaper and style
+                                    // PAGE 8: Google sync
                                     ColumnLayout {
                                         visible: settingsRoot.currentPage === 8
                                         Layout.fillWidth: true
@@ -1347,44 +1264,47 @@ FloatingWindow {
                                                         color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
                                                         border.width: 1
                                                         border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+                                                        clip: true
 
                                                         Image {
-                                                            id: googlePreviewAvatar
+                                                            id: accountGoogleAvatar
                                                             anchors.fill: parent
-                                                            source: GoogleSyncService.avatar !== ""
-                                                                ? (GoogleSyncService.avatar.startsWith("/") ? "file://" + GoogleSyncService.avatar : GoogleSyncService.avatar)
+                                                            source: AccountService.google.avatar !== ""
+                                                                ? (AccountService.google.avatar.startsWith("/") ? "file://" + AccountService.google.avatar : AccountService.google.avatar)
                                                                 : ""
                                                             sourceSize: Qt.size(44, 44)
                                                             fillMode: Image.PreserveAspectCrop
                                                             smooth: true
-                                                            visible: GoogleSyncService.connected && source !== "" && status === Image.Ready
+                                                            visible: AccountService.googleLoggedIn && source !== "" && status === Image.Ready
                                                         }
 
                                                         Text {
                                                             anchors.centerIn: parent
-                                                            text: GoogleSyncService.displayName !== "" ? GoogleSyncService.displayName[0].toUpperCase() : "G"
+                                                            text: "G"
                                                             color: settingsRoot.textPrimary
                                                             font.pixelSize: 18
                                                             font.family: "Google Sans"
                                                             font.weight: Font.Bold
-                                                            visible: !googlePreviewAvatar.visible
+                                                            visible: !accountGoogleAvatar.visible
                                                         }
                                                     }
 
                                                     ColumnLayout {
                                                         Layout.fillWidth: true
                                                         spacing: 2
+
                                                         Text {
-                                                            text: GoogleSyncService.connected
-                                                                  ? GoogleSyncService.displayName
+                                                            text: AccountService.googleLoggedIn
+                                                                  ? AccountService.google.displayName
                                                                   : "Google account"
                                                             font.pixelSize: 14; font.family: "Google Sans"; font.weight: Font.Medium
                                                             color: settingsRoot.textPrimary
                                                         }
+
                                                         Text {
-                                                            text: GoogleSyncService.connected
-                                                                  ? (GoogleSyncService.email !== "" ? GoogleSyncService.email : "Connected locally")
-                                                                  : "Sign in state for Google-powered shell features"
+                                                            text: AccountService.googleLoggedIn
+                                                                  ? AccountService.google.email
+                                                                  : "Optional Google-powered shell profile"
                                                             font.pixelSize: 12; font.family: "Google Sans"
                                                             color: settingsRoot.textSecondary
                                                             wrapMode: Text.WordWrap
@@ -1393,19 +1313,31 @@ FloatingWindow {
                                                     }
 
                                                     StatusPill {
-                                                        label: GoogleSyncService.connecting
+                                                        label: AccountService.busy
                                                                ? "Connecting"
-                                                               : (GoogleSyncService.connected ? "Connected" : "Not connected")
-                                                        active: GoogleSyncService.connected
+                                                               : (AccountService.googleLoggedIn ? "Connected" : "Not connected")
+                                                        active: AccountService.googleLoggedIn
                                                     }
                                                 }
 
                                                 Rectangle { Layout.fillWidth: true; height: 1; color: settingsRoot.dividerColor }
 
+                                                InfoRow {
+                                                    visible: AccountService.googleLoggedIn
+                                                    label: "Display name"
+                                                    value: AccountService.google.displayName
+                                                }
+
+                                                InfoRow {
+                                                    visible: AccountService.googleLoggedIn
+                                                    label: "Email"
+                                                    value: AccountService.google.email
+                                                }
+
                                                 Text {
-                                                    visible: GoogleSyncService.message !== ""
+                                                    visible: AccountService.google.message !== "" || AccountService.error !== ""
                                                     Layout.fillWidth: true
-                                                    text: GoogleSyncService.message
+                                                    text: AccountService.error !== "" ? AccountService.error : AccountService.google.message
                                                     font.pixelSize: 12
                                                     font.family: "Google Sans"
                                                     color: settingsRoot.textSecondary
@@ -1416,205 +1348,74 @@ FloatingWindow {
                                                     Layout.fillWidth: true
                                                     spacing: 8
                                                     Item { Layout.fillWidth: true }
+
                                                     ActionButton {
-                                                        label: GoogleSyncService.connecting ? "Waiting for browser" : "Sign in"
+                                                        label: AccountService.busy ? "Opening browser" : "Connect"
                                                         primary: true
-                                                        enabled: GoogleSyncService.canStartAuth
-                                                        visible: !GoogleSyncService.connected
-                                                        onClicked: GoogleSyncService.beginConnect()
+                                                        visible: !AccountService.googleLoggedIn
+                                                        enabled: !AccountService.busy && AccountService.google.configured
+                                                        onClicked: AccountService.loginGoogle()
                                                     }
+
                                                     ActionButton {
-                                                        label: "Open in browser"
-                                                        visible: GoogleSyncService.connecting && GoogleSyncService.authUrl !== ""
-                                                        onClicked: GoogleSyncService.openAuthUrl()
-                                                    }
-                                                    ActionButton {
-                                                        label: "Sync now"
+                                                        label: "Refresh profile"
                                                         primary: true
-                                                        visible: GoogleSyncService.connected
-                                                        onClicked: GoogleSyncService.syncNow()
+                                                        visible: AccountService.googleLoggedIn
+                                                        enabled: !AccountService.busy
+                                                        onClicked: AccountService.refreshGoogleProfile()
                                                     }
+
                                                     ActionButton {
                                                         label: "Disconnect"
-                                                        visible: GoogleSyncService.connected || GoogleSyncService.connecting
-                                                        onClicked: GoogleSyncService.disconnect()
-                                                    }
-                                                }
-
-                                                InfoRow {
-                                                    visible: GoogleSyncService.connected
-                                                    label: "Last sync"
-                                                    value: GoogleSyncService.lastSync || "Never"
-                                                }
-                                                InfoRow {
-                                                    visible: GoogleSyncService.connected && GoogleSyncService.tokenExpiresAt !== ""
-                                                    label: "Token expires"
-                                                    value: GoogleSyncService.tokenExpiresAt
-                                                }
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "OAuth setup"
-                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
-                                            color: settingsRoot.activeItem
-                                            Layout.leftMargin: 12; Layout.topMargin: 8
-                                        }
-
-                                        Rectangle {
-                                            Layout.fillWidth: true
-                                            Layout.leftMargin: 10; Layout.rightMargin: 10
-                                            implicitHeight: googleOAuthCol.implicitHeight + 32
-                                            radius: 16
-                                            color: Qt.rgba(1,1,1,0.03)
-                                            border.color: Qt.rgba(1,1,1,0.05)
-                                            border.width: 1
-
-                                            ColumnLayout {
-                                                id: googleOAuthCol
-                                                anchors { fill: parent; margins: 16 }
-                                                spacing: 12
-
-                                                Text {
-                                                    Layout.fillWidth: true
-                                                    text: "Real Google sign-in requires your own Google OAuth Desktop client ID. Reimagined does not ship a shared Google OAuth client."
-                                                    font.pixelSize: 12
-                                                    font.family: "Google Sans"
-                                                    color: settingsRoot.textSecondary
-                                                    wrapMode: Text.WordWrap
-                                                }
-
-                                                GoogleTextField {
-                                                    label: "Client ID"
-                                                    textValue: settingsRoot.googleDraftClientId
-                                                    placeholder: "Desktop OAuth client ID"
-                                                    onEdited: function(value) { settingsRoot.googleDraftClientId = value }
-                                                }
-
-                                                RowLayout {
-                                                    Layout.fillWidth: true
-                                                    spacing: 8
-                                                    Item { Layout.fillWidth: true }
-                                                    ActionButton {
-                                                        label: "Open Google Cloud"
-                                                        onClicked: settingsRoot.openPath("https://console.cloud.google.com/apis/credentials")
-                                                    }
-                                                    ActionButton {
-                                                        label: "Save client ID"
-                                                        primary: true
-                                                        enabled: settingsRoot.googleDraftClientId.trim() !== GoogleSyncService.oauthClientId
-                                                        onClicked: settingsRoot.saveGoogleOAuthClientId()
+                                                        visible: AccountService.googleLoggedIn
+                                                        enabled: !AccountService.busy
+                                                        onClicked: AccountService.logoutGoogle()
                                                     }
                                                 }
                                             }
                                         }
 
                                         Text {
-                                            text: "Manual fallback"
+                                            visible: AccountService.googleLoggedIn
+                                            text: "Customization"
                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                             color: settingsRoot.activeItem
                                             Layout.leftMargin: 12; Layout.topMargin: 8
                                         }
 
                                         Rectangle {
+                                            visible: AccountService.googleLoggedIn
                                             Layout.fillWidth: true
                                             Layout.leftMargin: 10; Layout.rightMargin: 10
-                                            implicitHeight: googleDetailsCol.implicitHeight + 32
+                                            implicitHeight: accountGoogleOptions.implicitHeight
                                             radius: 16
                                             color: Qt.rgba(1,1,1,0.03)
                                             border.color: Qt.rgba(1,1,1,0.05)
                                             border.width: 1
 
                                             ColumnLayout {
-                                                id: googleDetailsCol
-                                                anchors { fill: parent; margins: 16 }
-                                                spacing: 12
-
-                                                Text {
-                                                    Layout.fillWidth: true
-                                                    text: "Use this only when OAuth is not configured yet. These values are saved locally and used by Reimagined shell features."
-                                                    font.pixelSize: 12
-                                                    font.family: "Google Sans"
-                                                    color: settingsRoot.textSecondary
-                                                    wrapMode: Text.WordWrap
-                                                }
-
-                                                GoogleTextField {
-                                                    label: "Google name"
-                                                    textValue: settingsRoot.googleDraftName
-                                                    placeholder: "Your Google display name"
-                                                    onEdited: function(value) { settingsRoot.googleDraftName = value }
-                                                }
-
-                                                GoogleTextField {
-                                                    label: "Google email"
-                                                    textValue: settingsRoot.googleDraftEmail
-                                                    placeholder: "you@gmail.com"
-                                                    onEdited: function(value) { settingsRoot.googleDraftEmail = value }
-                                                }
-
-                                                GoogleTextField {
-                                                    label: "Profile picture URL"
-                                                    textValue: settingsRoot.googleDraftAvatar
-                                                    placeholder: "https://... or /home/.../avatar.png"
-                                                    onEdited: function(value) { settingsRoot.googleDraftAvatar = value }
-                                                }
-
-                                                RowLayout {
-                                                    Layout.fillWidth: true
-                                                    spacing: 8
-                                                    Item { Layout.fillWidth: true }
-                                                    ActionButton {
-                                                        label: "Save account"
-                                                        primary: true
-                                                        enabled: settingsRoot.googleDraftName.trim() !== ""
-                                                        onClicked: settingsRoot.saveGoogleAccount()
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        Text {
-                                            visible: GoogleSyncService.connected
-                                            text: "Lock screen"
-                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
-                                            color: settingsRoot.activeItem
-                                            Layout.leftMargin: 12; Layout.topMargin: 8
-                                        }
-
-                                        Rectangle {
-                                            visible: GoogleSyncService.connected
-                                            Layout.fillWidth: true
-                                            Layout.leftMargin: 10; Layout.rightMargin: 10
-                                            implicitHeight: googleLockCol.implicitHeight
-                                            radius: 16
-                                            color: Qt.rgba(1,1,1,0.03)
-                                            border.color: Qt.rgba(1,1,1,0.05)
-                                            border.width: 1
-
-                                            ColumnLayout {
-                                                id: googleLockCol
+                                                id: accountGoogleOptions
                                                 anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
                                                 spacing: 0
 
                                                 SettingsRow {
                                                     iconSource: "assets/icons/account-circle.svg"
-                                                    title: "Change lock screen profile picture to Google profile picture"
-                                                    subtitle: "Uses the saved Google profile picture on the lock screen"
+                                                    title: "Use Google avatar"
+                                                    subtitle: "Visual profile image only"
                                                     hasSwitch: true
-                                                    switchVal: GoogleSyncService.useProfilePicture
+                                                    switchVal: AccountService.useGoogleAvatar
                                                     showDivider: true
-                                                    onSwitchToggled: GoogleSyncService.setUseProfilePicture(!GoogleSyncService.useProfilePicture)
+                                                    onSwitchToggled: AccountService.setUseGoogleAvatar(!AccountService.useGoogleAvatar)
                                                 }
 
                                                 SettingsRow {
                                                     iconSource: "assets/icons/account-circle.svg"
-                                                    title: "Change your system name to Google name"
-                                                    subtitle: "For now this only changes the name on the lock screen"
+                                                    title: "Use Google display name"
+                                                    subtitle: "Visual label only; Linux username is unchanged"
                                                     hasSwitch: true
-                                                    switchVal: GoogleSyncService.useDisplayName
+                                                    switchVal: AccountService.useGoogleDisplayName
                                                     showDivider: false
-                                                    onSwitchToggled: GoogleSyncService.setUseDisplayName(!GoogleSyncService.useDisplayName)
+                                                    onSwitchToggled: AccountService.setUseGoogleDisplayName(!AccountService.useGoogleDisplayName)
                                                 }
                                             }
                                         }

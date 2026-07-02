@@ -34,6 +34,12 @@ PACMAN_PACKAGES=(
     "ttf-roboto"
     "inter-font"
     "ttf-jetbrains-mono-nerd"
+    "cmake"
+    "ninja"
+    "gcc"
+    "pkgconf"
+    "qt6-base"
+    "libsecret"
     "jq"
     "python"
     "python-dbus"
@@ -131,6 +137,8 @@ COMMANDS=(
     "curl:curl"
     "zenity:zenity"
     "matugen:matugen-bin (AUR)"
+    "cmake:cmake"
+    "ninja:ninja"
     "killall:psmisc"
 )
 
