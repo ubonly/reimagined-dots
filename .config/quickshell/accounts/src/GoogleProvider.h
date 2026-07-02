@@ -15,6 +15,7 @@ public:
     ProviderState logout() override;
     ProviderState state() override;
     ProviderState refreshProfile() override;
+    ProviderState setClientId(const QString &clientId);
 
     bool isLoggedIn() override;
     QString displayName() override;
@@ -40,6 +41,7 @@ private:
     QByteArray getBytes(const QString &url, QString *error);
 
     QString configDir() const;
+    QString clientIdPath() const;
     QString statePath() const;
     QString avatarCachePath() const;
     qint64 nowSeconds() const;

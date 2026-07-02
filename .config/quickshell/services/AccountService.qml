@@ -30,10 +30,11 @@ Singleton {
     readonly property bool useGoogleAvatar: ConfigService.ready && ConfigService.values.accountUseGoogleAvatar
     readonly property bool useGoogleDisplayName: ConfigService.ready && ConfigService.values.accountUseGoogleDisplayName
 
-    function run(action) {
+    function run(action, args) {
         if (accountProc.running)
             return
         accountProc.action = action
+        accountProc.args = args || []
         accountProc.running = true
     }
 
@@ -51,6 +52,10 @@ Singleton {
 
     function refreshGoogleProfile() {
         run("refresh")
+    }
+
+    function configureGoogleClientId(clientId) {
+        run("set-client-id", [clientId])
     }
 
     function setUseGoogleAvatar(enabled) {
@@ -100,8 +105,9 @@ Singleton {
     Process {
         id: accountProc
         property string action: "status"
+        property var args: []
 
-        command: [root.backendPath, action]
+        command: [root.backendPath, action].concat(args)
         running: false
         onRunningChanged: root.busy = running
         onExited: function(exitCode, exitStatus) {

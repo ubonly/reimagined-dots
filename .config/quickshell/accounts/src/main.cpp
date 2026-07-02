@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
         result = google.logout();
     } else if (command == "refresh") {
         result = google.refreshProfile();
+    } else if (command == "set-client-id") {
+        result = google.setClientId(args.size() > 2 ? args.at(2) : QString());
     } else {
         result.provider = "google";
         result.status = "error";

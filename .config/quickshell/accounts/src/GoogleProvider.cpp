@@ -13,6 +13,7 @@
 #include <QNetworkRequest>
 #include <QProcess>
 #include <QRandomGenerator>
+#include <QSaveFile>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
@@ -88,7 +89,7 @@ QString GoogleProvider::clientId() const {
     if (!compiledClient.isEmpty())
         return compiledClient;
 
-    QFile file(configDir() + "/accounts/google_client_id");
+    QFile file(clientIdPath());
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
         return QString::fromUtf8(file.readAll()).trimmed();
 
@@ -157,7 +158,8 @@ ProviderState GoogleProvider::login(const ProgressCallback &progress) {
     query.addQueryItem("code_challenge_method", "S256");
     authUrl.setQuery(query);
 
-    QProcess::startDetached("xdg-open", {authUrl.toString(QUrl::FullyEncoded)});
+    if (!QProcess::startDetached("xdg-open", {authUrl.toString(QUrl::FullyEncoded)}))
+        return disconnectedState("Could not open the default browser for Google sign-in.");
 
     QEventLoop callbackLoop;
     QTimer timeout;
@@ -238,6 +240,24 @@ ProviderState GoogleProvider::logout() {
     if (!error.isEmpty())
         return disconnectedState("Signed out locally, but Secret Service returned: " + error);
     return disconnectedState();
+}
+
+ProviderState GoogleProvider::setClientId(const QString &clientId) {
+    const QString trimmed = clientId.trimmed();
+    if (trimmed.isEmpty())
+        return disconnectedState("Google OAuth client ID is empty.");
+
+    QDir().mkpath(QFileInfo(clientIdPath()).absolutePath());
+    QSaveFile file(clientIdPath());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+        return disconnectedState("Could not open Google OAuth client ID file: " + file.errorString());
+
+    file.write(trimmed.toUtf8());
+    file.write("\n");
+    if (!file.commit())
+        return disconnectedState("Could not save Google OAuth client ID: " + file.errorString());
+
+    return disconnectedState("Google OAuth client ID saved. You can connect now.");
 }
 
 ProviderState GoogleProvider::state() {
@@ -468,6 +488,10 @@ QByteArray GoogleProvider::getBytes(const QString &url, QString *error) {
 
 QString GoogleProvider::configDir() const {
     return QDir::homePath() + "/.config/quickshell";
+}
+
+QString GoogleProvider::clientIdPath() const {
+    return configDir() + "/accounts/google_client_id";
 }
 
 QString GoogleProvider::statePath() const {

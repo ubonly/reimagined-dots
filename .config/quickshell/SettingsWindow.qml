@@ -58,6 +58,7 @@ FloatingWindow {
     readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
+    property string googleClientIdDraft: ""
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -494,6 +495,73 @@ FloatingWindow {
             enabled: abtn.enabled
             cursorShape: Qt.PointingHandCursor
             onClicked: abtn.clicked()
+        }
+    }
+
+    component SetupTextField: RowLayout {
+        id: field
+        property string label: ""
+        property string textValue: ""
+        property string placeholder: ""
+        signal edited(string value)
+
+        Layout.fillWidth: true
+        spacing: 16
+
+        Text {
+            text: field.label
+            font.pixelSize: 13
+            font.family: "Google Sans"
+            font.weight: Font.Medium
+            color: settingsRoot.textPrimary
+            Layout.preferredWidth: 120
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 38
+            radius: 12
+            color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.06)
+            border.width: 1
+            border.color: input.activeFocus
+                          ? Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.55)
+                          : Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+
+            TextInput {
+                id: input
+                anchors {
+                    fill: parent
+                    leftMargin: 12
+                    rightMargin: 12
+                }
+                verticalAlignment: TextInput.AlignVCenter
+                text: field.textValue
+                color: settingsRoot.textPrimary
+                selectionColor: Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.30)
+                selectedTextColor: settingsRoot.textPrimary
+                font.pixelSize: 12
+                font.family: "Google Sans"
+                clip: true
+                selectByMouse: true
+                onTextChanged: field.edited(text)
+            }
+
+            Text {
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: 12
+                    right: parent.right
+                    rightMargin: 12
+                }
+                text: field.placeholder
+                color: settingsRoot.textSecondary
+                font.pixelSize: 12
+                font.family: "Google Sans"
+                elide: Text.ElideRight
+                visible: input.text === "" && !input.activeFocus
+            }
         }
     }
 
@@ -1370,6 +1438,65 @@ FloatingWindow {
                                                         visible: AccountService.googleLoggedIn
                                                         enabled: !AccountService.busy
                                                         onClicked: AccountService.logoutGoogle()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            visible: !AccountService.google.configured && !AccountService.googleLoggedIn
+                                            text: "OAuth setup"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            visible: !AccountService.google.configured && !AccountService.googleLoggedIn
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: googleSetupCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: googleSetupCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 14
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Google sign-in requires a Desktop OAuth client ID. This is public app configuration, not your Google password."
+                                                    font.pixelSize: 12
+                                                    font.family: "Google Sans"
+                                                    color: settingsRoot.textSecondary
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                SetupTextField {
+                                                    label: "Client ID"
+                                                    textValue: settingsRoot.googleClientIdDraft
+                                                    placeholder: "1234567890-abcdef.apps.googleusercontent.com"
+                                                    onEdited: function(value) { settingsRoot.googleClientIdDraft = value }
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Item { Layout.fillWidth: true }
+
+                                                    ActionButton {
+                                                        label: "Open Google Cloud"
+                                                        onClicked: Quickshell.execDetached(["xdg-open", "https://console.cloud.google.com/apis/credentials"])
+                                                    }
+
+                                                    ActionButton {
+                                                        label: "Save client ID"
+                                                        primary: true
+                                                        enabled: !AccountService.busy && settingsRoot.googleClientIdDraft.trim() !== ""
+                                                        onClicked: AccountService.configureGoogleClientId(settingsRoot.googleClientIdDraft)
                                                     }
                                                 }
                                             }
