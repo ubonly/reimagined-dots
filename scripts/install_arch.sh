@@ -39,6 +39,7 @@ PACMAN_PACKAGES=(
     "gcc"
     "pkgconf"
     "qt6-base"
+    "qt6-networkauth"
     "libsecret"
     "jq"
     "python"

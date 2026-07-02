@@ -39,6 +39,7 @@ FEDORA_PACKAGES=(
     "gcc-c++"
     "pkgconf-pkg-config"
     "qt6-qtbase-devel"
+    "qt6-qtnetworkauth-devel"
     "libsecret-devel"
 )
 

@@ -37,6 +37,7 @@
             pkg-config
             gcc
             qt6.qtbase
+            qt6.qtnetworkauth
             libsecret
             grim
             ffmpeg

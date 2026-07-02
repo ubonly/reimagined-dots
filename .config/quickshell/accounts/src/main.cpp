@@ -1,4 +1,4 @@
-#include "GoogleProvider.h"
+#include "AccountManager.h"
 
 #include <QCoreApplication>
 #include <QJsonDocument>
@@ -15,29 +15,10 @@ int main(int argc, char **argv) {
     QCoreApplication::setOrganizationName("Reimagined");
     QCoreApplication::setApplicationName("ReimaginedAccountCtl");
 
-    const QStringList args = app.arguments();
-    const QString command = args.size() > 1 ? args.at(1) : "status";
-
-    GoogleProvider google;
-    ProviderState result;
-
-    if (command == "status") {
-        result = google.state();
-    } else if (command == "login") {
-        result = google.login([](const ProviderState &progress) {
-            printJson(progress);
-        });
-    } else if (command == "logout") {
-        result = google.logout();
-    } else if (command == "refresh") {
-        result = google.refreshProfile();
-    } else if (command == "set-client-id") {
-        result = google.setClientId(args.size() > 2 ? args.at(2) : QString());
-    } else {
-        result.provider = "google";
-        result.status = "error";
-        result.error = "Unknown account command: " + command;
-    }
+    AccountManager manager;
+    const ProviderState result = manager.dispatch(app.arguments(), [](const ProviderState &progress) {
+        printJson(progress);
+    });
 
     printJson(result);
     return result.error.isEmpty() ? 0 : 1;

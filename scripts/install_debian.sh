@@ -40,6 +40,7 @@ DEBIAN_PACKAGES=(
     "g++"
     "pkg-config"
     "qt6-base-dev"
+    "qt6-networkauth-dev"
     "libsecret-1-dev"
 )
 
