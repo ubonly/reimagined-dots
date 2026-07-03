@@ -5,7 +5,7 @@ if qs ipc call lock activate >/dev/null 2>&1; then
     exit 0
 fi
 
-if hyprctl dispatch global quickshell:lock >/dev/null 2>&1; then
+if hyprctl dispatch 'hl.dsp.global("quickshell:lock")' >/dev/null 2>&1; then
     exit 0
 fi
 

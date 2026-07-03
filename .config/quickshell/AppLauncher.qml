@@ -543,8 +543,17 @@ PanelWindow {
                 break
             }
         }
-        Hyprland.dispatch("exec " + cmd)
+        Hyprland.dispatch("hl.dsp.exec_cmd(" + launcher.luaQuote(cmd) + ")")
         isOpen = false
+    }
+
+    function luaQuote(value) {
+        var text = String(value || "")
+        return "\"" + text
+            .replace(/\\/g, "\\\\")
+            .replace(/"/g, "\\\"")
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r") + "\""
     }
 
     // full-screen background (transparent)

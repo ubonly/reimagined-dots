@@ -786,7 +786,7 @@ PanelWindow {
                         model: [
                             { icon: "assets/icons/power-settings-new.svg", label: "Выключить",     cmd: "systemctl poweroff" },
                             { icon: "assets/icons/restart-alt.svg",       label: "Перезагрузить",  cmd: "systemctl reboot" },
-                            { icon: "assets/icons/logout.svg",            label: "Выйти",          cmd: "hyprctl dispatch exit" },
+                            { icon: "assets/icons/logout.svg",            label: "Выйти",          cmd: "hyprctl dispatch 'hl.dsp.exit()'" },
                             { icon: "assets/icons/lock-outline.svg",      label: "Заблокировать",  cmd: "~/.config/hypr/lock.sh" }
                         ]
 
@@ -922,7 +922,7 @@ PanelWindow {
                         id: gearArea; anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                         onClicked: {
-                            cmdProc.command = ["bash", "-c", "hyprctl dispatch exec blueman-manager &"]
+                            cmdProc.command = ["bash", "-c", "hyprctl dispatch 'hl.dsp.exec_cmd(\"blueman-manager\")' &"]
                             cmdProc.running = true
                             root.popupVisible = false
                         }
@@ -1273,7 +1273,7 @@ PanelWindow {
                             id: advArea; anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor; hoverEnabled: true
                             onClicked: {
-                                cmdProc.command = ["bash", "-c", "hyprctl dispatch exec blueman-manager &"]
+                                cmdProc.command = ["bash", "-c", "hyprctl dispatch 'hl.dsp.exec_cmd(\"blueman-manager\")' &"]
                                 cmdProc.running = true
                                 root.popupVisible = false
                             }

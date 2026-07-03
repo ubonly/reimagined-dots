@@ -62,7 +62,7 @@ Item {
         hoverEnabled: true
         cursorShape:  Qt.PointingHandCursor
 
-        onClicked: Hyprland.dispatch("workspace " + root.wsId)
+        onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + root.wsId + " })")
 
         onEntered: bg.scale = 1.15
         onExited:  bg.scale = 1.0

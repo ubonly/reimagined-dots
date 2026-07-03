@@ -19,6 +19,15 @@ Item {
     implicitWidth:  46
     implicitHeight: 46
 
+    function luaQuote(value) {
+        var text = String(value || "")
+        return "\"" + text
+            .replace(/\\/g, "\\\\")
+            .replace(/"/g, "\\\"")
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r") + "\""
+    }
+
     // backrgound when touch/aimed
     Rectangle {
         id: bg
@@ -127,7 +136,7 @@ Item {
 
         onClicked: {
             if (root.appCmd !== "")
-                Hyprland.dispatch("exec [float] " + root.appCmd)
+                Hyprland.dispatch("hl.dsp.exec_cmd(" + root.luaQuote(root.appCmd) + ", { float = true })")
         }
     }
 }

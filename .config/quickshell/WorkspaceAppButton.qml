@@ -141,6 +141,6 @@ Item {
     MouseArea {
         id: mouse; anchors.fill: parent
         hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-        onClicked: Hyprland.dispatch("workspace " + root.wsId)
+        onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + root.wsId + " })")
     }
 }

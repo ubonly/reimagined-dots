@@ -235,7 +235,7 @@ end
 
 bind(main_mod .. " + Q", exec(terminal))
 bind(main_mod .. " + C", hl.dsp.window.close())
-bind(main_mod .. " + M", exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
+bind(main_mod .. " + M", exec("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 bind(main_mod .. " + E", exec(file_manager))
 bind(main_mod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 bind(main_mod .. " + X", exec(menu))
