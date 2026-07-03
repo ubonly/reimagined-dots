@@ -25,6 +25,9 @@ ShellRoot {
     readonly property int dockTopRadius: effectiveDockStyle === "square" ? 0 : 26
     property bool dndMode: ConfigService.ready ? ConfigService.values.dnd : false
     property string distroLogoName: ""
+    property string distroId: ""
+    readonly property string distroLogoAsset: root.distroId.toLowerCase() === "debian" ? "assets/icons/distro-debian.svg" : ""
+    readonly property string distroLogoSource: root.dockLauncherIconMode !== "distro" ? "" : (root.distroLogoAsset.length > 0 ? root.distroLogoAsset : (root.distroLogoName.length > 0 ? "image://icon/" + root.distroLogoName : ""))
 
     property string kbLayout: "US"
 
@@ -69,12 +72,13 @@ ShellRoot {
 
     Process {
         id: distroLogoProc
-        command: ["bash", "-lc", "source /etc/os-release 2>/dev/null || true; printf '%s\\n' \"${LOGO:-${ID:-linux}}\""]
+        command: ["bash", "-lc", "source /etc/os-release 2>/dev/null || true; printf '%s|%s\\n' \"${LOGO:-${ID:-linux}}\" \"${ID:-linux}\""]
         running: true
         stdout: SplitParser {
             onRead: function(line) {
-                var logo = line.trim();
-                root.distroLogoName = logo;
+                var parts = line.trim().split("|");
+                root.distroLogoName = parts.length > 0 ? parts[0] : "";
+                root.distroId = parts.length > 1 ? parts[1] : "";
             }
         }
     }
@@ -455,7 +459,7 @@ ShellRoot {
                         text: "G"
                         font { pixelSize: 17; family: "Google Sans"; weight: Font.Bold }
                         color: root.dockIconFillEnabled ? Theme.primary : Theme.dockText
-                        visible: root.dockLauncherIconMode !== "distro" || distroLogo.status !== Image.Ready
+                        visible: root.dockLauncherIconMode !== "distro" || root.distroLogoSource.length === 0
                     }
 
                     Image {
@@ -463,12 +467,12 @@ ShellRoot {
                         anchors.centerIn: parent
                         width: 22
                         height: 22
-                        source: root.dockLauncherIconMode === "distro" && root.distroLogoName.length > 0 ? ("image://icon/" + root.distroLogoName) : ""
+                        source: root.distroLogoSource
                         sourceSize: Qt.size(44, 44)
                         smooth: true
                         mipmap: true
                         visible: root.dockLauncherIconMode === "distro"
-                                 && distroLogo.status === Image.Ready
+                                 && root.distroLogoSource.length > 0
                                  && !root.dockIconFillEnabled
                     }
 
@@ -477,7 +481,7 @@ ShellRoot {
                         source: distroLogo
                         color: Theme.primary
                         visible: root.dockLauncherIconMode === "distro"
-                                 && distroLogo.status === Image.Ready
+                                 && root.distroLogoSource.length > 0
                                  && root.dockIconFillEnabled
                     }
 
