@@ -59,6 +59,8 @@ PanelWindow {
         onTriggered: {
             if (launcher.isOpen)
                 searchInput.forceActiveFocus()
+            if (launcher.isOpen)
+                launcher.resetLauncherScroll()
         }
     }
 
@@ -74,6 +76,14 @@ PanelWindow {
     property var recentApps: []
     property string _recentBuf: ""
     readonly property string recentFile: Qt.resolvedUrl("recent-apps.json").toString().replace("file://", "")
+
+    onRecentAppsChanged: {
+        clampRecentIndex()
+        if (isOpen && searchText === "") {
+            activeSection = recentVisible() ? "recent" : "apps"
+            resetLauncherScroll()
+        }
+    }
 
     Process {
         id: recentReadProc
@@ -187,7 +197,7 @@ PanelWindow {
     property string activeSection: "apps"
     property int recentIndex: 0
     property string _buf: ""
-    readonly property int maxSearchResults: 12
+    readonly property int maxSearchResults: 10
     readonly property var searchAliases: ({
         "vsc": ["visual studio code", "code-oss", "vscode", "code"],
         "vscode": ["visual studio code", "code-oss", "code"],
@@ -298,6 +308,20 @@ PanelWindow {
         }
 
         return false
+    }
+
+    function resetSelectionForEmptySearch() {
+        activeIndex = 0
+        recentIndex = 0
+        activeSection = recentVisible() ? "recent" : "apps"
+    }
+
+    function resetLauncherScroll() {
+        if (!appScroll)
+            return
+
+        appScroll.stopScrollAnimation()
+        appScroll.contentY = 0
     }
 
     Process {
@@ -491,6 +515,25 @@ PanelWindow {
         return best
     }
 
+    function sameApp(a, b) {
+        if (!a || !b)
+            return false
+
+        if ((a.exec || "") !== "" && a.exec === b.exec)
+            return true
+        if ((a.desktopId || "") !== "" && a.desktopId === b.desktopId)
+            return true
+        return (a.name || "") !== "" && a.name === b.name
+    }
+
+    function recentRank(app) {
+        for (var i = 0; i < recentApps.length; i++) {
+            if (launcher.sameApp(app, recentApps[i]))
+                return i
+        }
+        return -1
+    }
+
     function filterApps() {
         if (searchText === "") {
             filteredApps = allApps
@@ -500,13 +543,27 @@ PanelWindow {
         var ranked = []
         for (var i = 0; i < allApps.length; i++) {
             var score = launcher.scoreApp(allApps[i], searchText)
-            if (score < 9999)
-                ranked.push({ app: allApps[i], score: score })
+            if (score < 9999) {
+                var rank = launcher.recentRank(allApps[i])
+                ranked.push({
+                    app: allApps[i],
+                    score: score,
+                    recentRank: rank,
+                    effectiveScore: rank >= 0 ? score - Math.max(8, 36 - rank * 5) : score
+                })
+            }
         }
 
         ranked.sort(function(a, b) {
+            if (a.effectiveScore !== b.effectiveScore)
+                return a.effectiveScore - b.effectiveScore
             if (a.score !== b.score)
                 return a.score - b.score
+            if (a.recentRank !== b.recentRank) {
+                if (a.recentRank < 0) return 1
+                if (b.recentRank < 0) return -1
+                return a.recentRank - b.recentRank
+            }
             return a.app.name.localeCompare(b.app.name)
         })
 
@@ -520,12 +577,10 @@ PanelWindow {
     function toggle() {
         if (!isOpen) {
             searchText = ""
-            activeIndex = 0
-            activeSection = "apps"
-            recentIndex = 0
             filterApps()
+            resetSelectionForEmptySearch()
             searchInput.text = ""
-            appScroll.contentY = 0
+            resetLauncherScroll()
             if (allApps.length === 0 && !listProc.running)
                 listProc.running = true
             focusTimer.restart()
@@ -699,9 +754,9 @@ PanelWindow {
                         onTextChanged: {
                             launcher.searchText = text
                             launcher.activeIndex = 0
-                            launcher.activeSection = "apps"
                             launcher.recentIndex = 0
                             launcher.filterApps()
+                            launcher.activeSection = text === "" && launcher.recentVisible() ? "recent" : "apps"
                         }
 
                         Keys.onEscapePressed: launcher.isOpen = false
@@ -780,6 +835,10 @@ PanelWindow {
                     wrapScrollAnimation.stop()
                     wrapScrollAnimation.to = Math.max(0, Math.min(value, Math.max(0, contentHeight - height)))
                     wrapScrollAnimation.restart()
+                }
+
+                function stopScrollAnimation() {
+                    wrapScrollAnimation.stop()
                 }
 
                 function scrollToTop() {
