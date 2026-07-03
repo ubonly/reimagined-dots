@@ -321,7 +321,7 @@ PanelWindow {
             return
 
         appScroll.stopScrollAnimation()
-        appScroll.contentY = 0
+        appScroll.contentY = appScroll.topContentY()
     }
 
     Process {
@@ -831,9 +831,17 @@ PanelWindow {
                     positionViewAtIndex(launcher.activeIndex, GridView.Contain)
                 }
 
+                function topContentY() {
+                    return originY
+                }
+
+                function bottomContentY() {
+                    return Math.max(originY, originY + contentHeight - height)
+                }
+
                 function animateContentY(value) {
                     wrapScrollAnimation.stop()
-                    wrapScrollAnimation.to = Math.max(0, Math.min(value, Math.max(0, contentHeight - height)))
+                    wrapScrollAnimation.to = Math.max(topContentY(), Math.min(value, bottomContentY()))
                     wrapScrollAnimation.restart()
                 }
 
@@ -842,11 +850,11 @@ PanelWindow {
                 }
 
                 function scrollToTop() {
-                    animateContentY(0)
+                    animateContentY(topContentY())
                 }
 
                 function scrollToBottom() {
-                    animateContentY(Math.max(0, contentHeight - height))
+                    animateContentY(bottomContentY())
                 }
 
                 function scrollToIndex(index) {
