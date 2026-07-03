@@ -5,7 +5,9 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
+#include <QUrl>
 #include <QString>
+#include <QVariantMap>
 
 #include <functional>
 
@@ -39,6 +41,8 @@ public:
     bool isConfigured() const;
     QString clientId() const;
     bool saveClientId(const QString &clientId, QString *error);
+    QString clientSecret() const;
+    bool saveClientSecret(const QString &clientSecret, QString *error);
 
     OAuthResult login(const ProgressCallback &progress);
     bool refreshAccessToken(OAuthTokenSet *tokens, QString *error);
@@ -47,8 +51,10 @@ public:
 private:
     QString configDir() const;
     QString clientIdPath() const;
+    QString clientSecretPath() const;
     QString avatarCachePath() const;
     QString cacheAvatar(const QString &avatarUrl, QString *error);
+    QJsonObject postForm(const QUrl &url, const QVariantMap &form, QString *error);
     QByteArray getBytes(const QUrl &url, QString *error);
 
     QNetworkAccessManager network_;

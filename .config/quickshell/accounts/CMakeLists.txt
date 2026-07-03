@@ -25,3 +25,7 @@ target_link_libraries(accountctl PRIVATE Qt6::Core Qt6::Network Qt6::NetworkAuth
 if(DEFINED REIMAGINED_GOOGLE_CLIENT_ID)
     target_compile_definitions(accountctl PRIVATE REIMAGINED_GOOGLE_CLIENT_ID="${REIMAGINED_GOOGLE_CLIENT_ID}")
 endif()
+
+if(DEFINED REIMAGINED_GOOGLE_CLIENT_SECRET)
+    target_compile_definitions(accountctl PRIVATE REIMAGINED_GOOGLE_CLIENT_SECRET="${REIMAGINED_GOOGLE_CLIENT_SECRET}")
+endif()

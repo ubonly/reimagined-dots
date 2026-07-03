@@ -13,6 +13,8 @@ ProviderState AccountManager::dispatch(const QStringList &arguments, const Accou
         return google_.refreshProfile();
     if (command == "set-client-id")
         return google_.setClientId(arguments.size() > 2 ? arguments.at(2) : QString());
+    if (command == "set-client-secret")
+        return google_.setClientSecret(arguments.size() > 2 ? arguments.at(2) : QString());
 
     ProviderState state;
     state.provider = "google";

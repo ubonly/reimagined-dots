@@ -59,6 +59,7 @@ FloatingWindow {
     readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
     property string googleClientIdDraft: ""
+    property string googleClientSecretDraft: ""
 
     function updateDockStyle(style) {
         if (ConfigService.ready) ConfigService.values.dockStyle = style;
@@ -503,6 +504,7 @@ FloatingWindow {
         property string label: ""
         property string textValue: ""
         property string placeholder: ""
+        property bool password: false
         signal edited(string value)
 
         Layout.fillWidth: true
@@ -538,6 +540,7 @@ FloatingWindow {
                 verticalAlignment: TextInput.AlignVCenter
                 text: field.textValue
                 color: settingsRoot.textPrimary
+                echoMode: field.password ? TextInput.Password : TextInput.Normal
                 selectionColor: Qt.rgba(settingsRoot.activeItem.r, settingsRoot.activeItem.g, settingsRoot.activeItem.b, 0.30)
                 selectedTextColor: settingsRoot.textPrimary
                 font.pixelSize: 12
@@ -1444,7 +1447,7 @@ FloatingWindow {
                                         }
 
                                         Text {
-                                            visible: !AccountService.google.configured && !AccountService.googleLoggedIn
+                                            visible: !AccountService.googleLoggedIn
                                             text: "OAuth setup"
                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                             color: settingsRoot.activeItem
@@ -1452,7 +1455,7 @@ FloatingWindow {
                                         }
 
                                         Rectangle {
-                                            visible: !AccountService.google.configured && !AccountService.googleLoggedIn
+                                            visible: !AccountService.googleLoggedIn
                                             Layout.fillWidth: true
                                             Layout.leftMargin: 10; Layout.rightMargin: 10
                                             implicitHeight: googleSetupCol.implicitHeight + 32
@@ -1468,7 +1471,7 @@ FloatingWindow {
 
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Google sign-in requires a Desktop OAuth client ID. This is public app configuration, not your Google password."
+                                                    text: "Use a Desktop OAuth client ID when possible. If Google says client_secret is missing, this is a Web client and its optional client secret is required."
                                                     font.pixelSize: 12
                                                     font.family: "Google Sans"
                                                     color: settingsRoot.textSecondary
@@ -1480,6 +1483,14 @@ FloatingWindow {
                                                     textValue: settingsRoot.googleClientIdDraft
                                                     placeholder: "1234567890-abcdef.apps.googleusercontent.com"
                                                     onEdited: function(value) { settingsRoot.googleClientIdDraft = value }
+                                                }
+
+                                                SetupTextField {
+                                                    label: "Client secret"
+                                                    textValue: settingsRoot.googleClientSecretDraft
+                                                    placeholder: "Optional, only for Web OAuth clients"
+                                                    password: true
+                                                    onEdited: function(value) { settingsRoot.googleClientSecretDraft = value }
                                                 }
 
                                                 RowLayout {
@@ -1497,6 +1508,13 @@ FloatingWindow {
                                                         primary: true
                                                         enabled: !AccountService.busy && settingsRoot.googleClientIdDraft.trim() !== ""
                                                         onClicked: AccountService.configureGoogleClientId(settingsRoot.googleClientIdDraft)
+                                                    }
+
+                                                    ActionButton {
+                                                        label: settingsRoot.googleClientSecretDraft.trim() === "" ? "Clear secret" : "Save secret"
+                                                        primary: false
+                                                        enabled: !AccountService.busy
+                                                        onClicked: AccountService.configureGoogleClientSecret(settingsRoot.googleClientSecretDraft)
                                                     }
                                                 }
                                             }

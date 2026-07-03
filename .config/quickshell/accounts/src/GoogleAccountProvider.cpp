@@ -108,6 +108,15 @@ ProviderState GoogleAccountProvider::setClientId(const QString &clientId) {
     return disconnectedState("Google OAuth client ID saved. You can connect now.");
 }
 
+ProviderState GoogleAccountProvider::setClientSecret(const QString &clientSecret) {
+    QString error;
+    if (!oauth_.saveClientSecret(clientSecret, &error))
+        return disconnectedState("Could not save Google OAuth client secret: " + error);
+    return disconnectedState(clientSecret.trimmed().isEmpty()
+        ? "Google OAuth client secret removed."
+        : "Google OAuth client secret saved. You can connect now.");
+}
+
 ProviderState GoogleAccountProvider::state() {
     if (!oauth_.isConfigured())
         return disconnectedState("Google OAuth client is not configured for this build.");

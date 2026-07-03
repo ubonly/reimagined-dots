@@ -20,6 +20,7 @@ public:
     QString email() override;
 
     ProviderState setClientId(const QString &clientId);
+    ProviderState setClientSecret(const QString &clientSecret);
 
 private:
     ProviderState disconnectedState(const QString &message = QString()) const;

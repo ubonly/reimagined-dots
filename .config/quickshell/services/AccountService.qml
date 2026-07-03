@@ -58,6 +58,10 @@ Singleton {
         run("set-client-id", [clientId])
     }
 
+    function configureGoogleClientSecret(clientSecret) {
+        run("set-client-secret", [clientSecret])
+    }
+
     function setUseGoogleAvatar(enabled) {
         if (ConfigService.ready)
             ConfigService.values.accountUseGoogleAvatar = enabled
