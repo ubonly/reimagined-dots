@@ -42,6 +42,7 @@ PACMAN_PACKAGES=(
     "gcc"
     "rust"
     "cargo"
+    "git"
     "pkgconf"
     "qt6-base"
     "qt6-declarative"
@@ -91,13 +92,13 @@ PACMAN_PACKAGES=(
     "polkit"
     "power-profiles-daemon"
     "bc"
+    "matugen"
 )
 
 # 3. AUR Packages
 AUR_PACKAGES=(
     "ttf-google-sans"
     "ttf-material-symbols-variable-git"
-    "matugen-bin"
 )
 
 echo "Установка пакетов из официальных репозиториев..."
@@ -120,7 +121,9 @@ if ! command -v matugen &> /dev/null; then
         read -p "Matugen не найден. Установить его через Cargo? (Y/n) " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            cargo install matugen --locked
+            if ! cargo install matugen --locked; then
+                echo "⚠️ Не удалось установить Matugen через Cargo. Установите matugen вручную или проверьте Rust toolchain."
+            fi
         fi
     else
         echo "⚠️ Matugen не найден, Cargo тоже не найден. Установите matugen вручную."
@@ -185,7 +188,7 @@ COMMANDS=(
     "playerctl:playerctl"
     "xdg-user-dir:xdg-user-dirs"
     "dbus-update-activation-environment:dbus"
-    "matugen:matugen-bin (AUR) or Cargo"
+    "matugen:matugen"
     "cmake:cmake"
     "ninja:ninja"
     "killall:psmisc"

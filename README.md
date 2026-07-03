@@ -67,9 +67,9 @@ Almost all dependencies are available across other major Linux distributions. He
 #### Fedora
 Most core utilities can be installed via `dnf`:
 ```bash
-sudo dnf install hyprland hyprlock hyprpaper jq bc python3-pillow python3-dbus python3-gobject kde-connect NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils xdg-user-dirs grim slurp ffmpeg-free wf-recorder wl-clipboard cliphist curl zenity kitty fish playerctl xdg-desktop-portal xdg-desktop-portal-hyprland
+sudo dnf install quickshell hyprland hyprlock hyprpaper jq bc python3-pillow python3-dbus python3-gobject kde-connect NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils xdg-user-dirs grim slurp ffmpeg-free wf-recorder wl-clipboard cliphist curl zenity kitty fish playerctl xdg-desktop-portal xdg-desktop-portal-hyprland
 ```
-* **Quickshell**: Build from source (`cargo install quickshell` or use Copr repo if available).
+* **Quickshell**: install the distro package when available. Do not use `cargo install quickshell`; Quickshell is not published as a crates.io package.
 * **Matugen**: Install via cargo (`cargo install matugen`) or download from Github releases.
 * **Starship / Hyprshot / swww / mpvpaper**: not always present in enabled Fedora repositories. The installer checks availability, skips unavailable packages, and can install Starship through Cargo.
 
@@ -81,7 +81,8 @@ Install core utilities via `apt`:
 ```bash
 sudo apt install jq bc python3 python3-pillow python3-dbus python3-gi kdeconnect network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils xdg-user-dirs grim slurp ffmpeg wf-recorder wl-clipboard cliphist curl zenity kitty fish starship playerctl
 ```
-* **Quickshell & Matugen**: Build from source (cargo / github releases).
+* **Quickshell**: on Debian trixie, use the official `trixie-backports` package. On Ubuntu, follow the official Quickshell installation guide if your repositories do not provide it.
+* **Matugen**: install via cargo (`cargo install matugen`) or download from GitHub releases.
 * **Debian backports**: use `./install.sh` or manually add your codename backports suite before installing Hyprland packages.
 
 #### NixOS

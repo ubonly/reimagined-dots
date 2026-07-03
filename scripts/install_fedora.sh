@@ -45,6 +45,7 @@ install_dnf_available() {
 }
 
 FEDORA_PACKAGES=(
+    "quickshell"
     "hyprland"
     "jq"
     "bc"
@@ -92,6 +93,8 @@ FEDORA_PACKAGES=(
     "pkgconf-pkg-config"
     "cargo"
     "rust"
+    "git"
+    "openssl-devel"
     "qt6-qtbase-devel"
     "qt6-qtdeclarative"
     "qt6-qtdeclarative-devel"
@@ -207,18 +210,13 @@ if ! command -v cargo &> /dev/null; then
 fi
 
 if command -v cargo &> /dev/null; then
-    # Compile Quickshell if not installed
-    if ! command -v quickshell &> /dev/null; then
-        read -p "Установить Quickshell из исходников через Cargo? (Y/n) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            echo "Установка зависимостей сборки Quickshell..."
-            sudo dnf install -y qt6-qtdeclarative-devel qt6-qt5compat-devel qt6-qtwayland-devel qt6-qtsvg-devel wayland-devel wayland-protocols-devel libxkbcommon-devel pam-devel pipewire-devel libsecret-devel
-            echo "Сборка и установка Quickshell (это может занять несколько минут)..."
-            cargo install quickshell --locked
-        fi
-    else
+    if command -v quickshell &> /dev/null; then
         echo "Quickshell уже установлен."
+    else
+        echo "⚠️ Quickshell не найден."
+        echo "На Fedora он доступен как пакет 'quickshell' в Fedora Packages."
+        echo "Если пакет недоступен в вашем релизе, установите Quickshell вручную по официальной инструкции: https://quickshell.org/docs/v0.3.0/guide/install-setup/"
+        echo "Важно: 'cargo install quickshell' не существует, Quickshell не публикуется в crates.io."
     fi
 
     # Compile Matugen if not installed
@@ -227,7 +225,9 @@ if command -v cargo &> /dev/null; then
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             echo "Сборка и установка Matugen..."
-            cargo install matugen --locked
+            if ! cargo install matugen --locked; then
+                echo "⚠️ Не удалось установить Matugen через Cargo. Установите matugen вручную или проверьте Rust toolchain."
+            fi
         fi
     else
         echo "Matugen уже установлен."
@@ -239,7 +239,9 @@ if command -v cargo &> /dev/null; then
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             echo "Сборка и установка Starship..."
-            cargo install starship --locked
+            if ! cargo install starship --locked; then
+                echo "⚠️ Не удалось установить Starship через Cargo. Terminal theming будет неполным до установки starship."
+            fi
         fi
     else
         echo "Starship уже установлен."
@@ -254,7 +256,7 @@ echo ""
 echo "Проверка установленных программ..."
 MISSING=()
 COMMANDS=(
-    "quickshell:quickshell (Cargo)"
+    "quickshell:quickshell"
     "matugen:matugen (Cargo)"
     "hyprctl:hyprland"
     "hyprlock:hyprlock"

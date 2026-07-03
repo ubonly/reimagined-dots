@@ -154,6 +154,7 @@ APT_BASE_PACKAGES=(
     "pkg-config"
     "cargo"
     "rustc"
+    "git"
     "qt6-base-dev"
     "qt6-declarative-dev"
     "qt6-5compat-dev"
@@ -168,6 +169,7 @@ APT_BASE_PACKAGES=(
     "qml6-module-qt-labs-platform"
     "qml6-module-qt5compat-graphicaleffects"
     "libsecret-1-dev"
+    "libssl-dev"
     "libwayland-dev"
     "wayland-protocols"
     "libxkbcommon-dev"
@@ -176,6 +178,7 @@ APT_BASE_PACKAGES=(
 )
 
 DEBIAN_BACKPORT_PACKAGES=(
+    "quickshell"
     "hyprland"
     "hyprlock"
     "hyprpaper"
@@ -285,18 +288,13 @@ if ! command -v cargo &> /dev/null; then
 fi
 
 if command -v cargo &> /dev/null; then
-    # Compile Quickshell if not installed
-    if ! command -v quickshell &> /dev/null; then
-        read -p "Установить Quickshell из исходников через Cargo? (Y/n) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            echo "Установка зависимостей сборки Quickshell..."
-            sudo apt install -y qt6-base-dev qt6-declarative-dev qt6-5compat-dev qt6-wayland-dev qt6-svg-dev libwayland-dev wayland-protocols libxkbcommon-dev libpam0g-dev libpipewire-0.3-dev libsecret-1-dev
-            echo "Сборка и установка Quickshell (это может занять несколько минут)..."
-            cargo install quickshell --locked
-        fi
-    else
+    if command -v quickshell &> /dev/null; then
         echo "Quickshell уже установлен."
+    else
+        echo "⚠️ Quickshell не найден."
+        echo "На Debian trixie он ставится из официального trixie-backports пакета 'quickshell'."
+        echo "На Ubuntu установите Quickshell вручную по официальной инструкции: https://quickshell.org/docs/v0.3.0/guide/install-setup/"
+        echo "Важно: 'cargo install quickshell' не существует, Quickshell не публикуется в crates.io."
     fi
 
     # Compile Matugen if not installed
@@ -305,7 +303,9 @@ if command -v cargo &> /dev/null; then
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             echo "Сборка и установка Matugen..."
-            cargo install matugen --locked
+            if ! cargo install matugen --locked; then
+                echo "⚠️ Не удалось установить Matugen через Cargo. Установите matugen вручную или проверьте Rust toolchain."
+            fi
         fi
     else
         echo "Matugen уже установлен."
@@ -317,7 +317,9 @@ if command -v cargo &> /dev/null; then
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             echo "Сборка и установка Starship..."
-            cargo install starship --locked
+            if ! cargo install starship --locked; then
+                echo "⚠️ Не удалось установить Starship через Cargo. Terminal theming будет неполным до установки starship."
+            fi
         fi
     else
         echo "Starship уже установлен."
@@ -332,7 +334,7 @@ echo ""
 echo "Проверка установленных программ..."
 MISSING=()
 COMMANDS=(
-    "quickshell:quickshell (Cargo)"
+    "quickshell:quickshell"
     "matugen:matugen (Cargo)"
     "hyprctl:hyprland"
     "hyprlock:hyprlock"
