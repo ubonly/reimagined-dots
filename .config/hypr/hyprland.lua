@@ -307,6 +307,17 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name = "polkit-auth-on-current-workspace",
+    match = {
+        class = "hyprpolkitagent",
+        title = "Hyprland Polkit Agent",
+    },
+    float = true,
+    center = true,
+    workspace = "current",
+})
+
+hl.window_rule({
     name = "move-hyprland-run",
     match = { class = "hyprland-run" },
     move = "20 monitor_h-120",
