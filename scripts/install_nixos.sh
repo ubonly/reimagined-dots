@@ -38,22 +38,59 @@ cat << 'EOF'
     matugen
     jq
     bc
-    python3
-    python3Packages.pillow
+    (python3.withPackages (ps: [
+      ps.dbus-python
+      ps.pygobject3
+      ps.pillow
+      ps.requests
+    ]))
+    kdePackages.kdeconnect-kde
+    hyprland
+    hyprlock
+    hyprpaper
+    hyprpolkitagent
+    hyprshot
+    networkmanager
+    bluez
+    wireplumber
+    blueman
+    power-profiles-daemon
     brightnessctl
     libnotify
     psmisc
     procps
     xdg-utils
+    xdg-user-dirs
+    xdg-desktop-portal
+    xdg-desktop-portal-hyprland
+    dbus
+    fontconfig
+    glib
+    polkit
     grim
+    slurp
     ffmpeg
     wf-recorder
     wl-clipboard
     cliphist
-    hyprlock
     curl
     zenity
-    hyprpaper
+    kitty
+    fish
+    starship
+    playerctl
+    qt6.qtbase
+    qt6.qtdeclarative
+    qt6.qt5compat
+    qt6.qtwayland
+    qt6.qtsvg
+    wayland
+    wayland-protocols
+    libxkbcommon
+    linux-pam
+    pipewire
+    libsecret
+    nerd-fonts.jetbrains-mono
   ];
 
   # Не забудьте включить службы:
@@ -62,6 +99,8 @@ cat << 'EOF'
   services.blueman.enable = true;
   services.power-profiles-daemon.enable = true;
   programs.hyprland.enable = true;
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
 EOF
 echo "------------------------------------------------------------------"
 echo ""

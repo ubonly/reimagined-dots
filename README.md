@@ -20,14 +20,20 @@ If you prefer to install things by hand, you will need:
 
 - `hyprland`
 - `quickshell`
+- `hyprlock`
+- `hyprpaper`
+- `hyprpolkitagent` (recommended)
 - `ttf-roboto`
 - `inter-font`
 - `ttf-jetbrains-mono-nerd`
 - `ttf-google-sans`
 - `ttf-material-symbols-variable-git`
+- `fontconfig`
 - `jq`
 - `bc` (for math calculations in scripts)
-- `python` & `python-pillow` (for wallpaper image validation)
+- `python`, `python-pillow`, Python DBus/GObject bindings
+- Qt 6 QML modules: QtQuick, Layouts, Controls, Dialogs, Qt5Compat GraphicalEffects, Qt Wayland, Qt SVG
+- `libsecret` development files for the Google account helper
 - `networkmanager`
 - `bluez-utils`
 - `wireplumber`
@@ -36,16 +42,21 @@ If you prefer to install things by hand, you will need:
 - `psmisc`
 - `procps-ng`
 - `xdg-utils`
+- `xdg-user-dirs`
+- `xdg-desktop-portal`
+- `xdg-desktop-portal-hyprland` (recommended on Hyprland)
 - `grim`
+- `slurp`
 - `ffmpeg`
 - `wf-recorder`
 - `wl-clipboard`
 - `hyprshot`
 - `cliphist`
-- `hyprlock`
 - `curl`
 - `zenity`
 - `matugen`
+- `kitty`, `fish`, `starship` (for the themed terminal prompt)
+- `playerctl`
 - `swww` or `hyprpaper` (for static wallpaper rendering)
 - `mpvpaper` (optional, for video wallpaper rendering)
 
@@ -56,18 +67,22 @@ Almost all dependencies are available across other major Linux distributions. He
 #### Fedora
 Most core utilities can be installed via `dnf`:
 ```bash
-sudo dnf install jq bc python3-pillow NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+sudo dnf install hyprland hyprlock hyprpaper jq bc python3-pillow python3-dbus python3-gobject kde-connect NetworkManager bluez wireplumber brightnessctl libnotify psmisc procps-ng xdg-utils xdg-user-dirs grim slurp ffmpeg-free wf-recorder wl-clipboard cliphist curl zenity kitty fish playerctl xdg-desktop-portal xdg-desktop-portal-hyprland
 ```
 * **Quickshell**: Build from source (`cargo install quickshell` or use Copr repo if available).
 * **Matugen**: Install via cargo (`cargo install matugen`) or download from Github releases.
-* **Hyprshot / Cliphist**: Available in Fedora Copr repositories or can be compiled manually.
+* **Starship / Hyprshot / swww / mpvpaper**: not always present in enabled Fedora repositories. The installer checks availability, skips unavailable packages, and can install Starship through Cargo.
 
-#### Debian / Ubuntu (Sid/Testing)
+#### Debian / Ubuntu
+
+On Debian stable/trixie, Hyprland components such as `hyprland`, `hyprlock`, `hyprpaper`, `hyprpolkitagent`, and `xdg-desktop-portal-hyprland` are installed from official Debian backports by the installer. Ubuntu does not get Debian backports automatically; unavailable packages are skipped with a warning.
+
 Install core utilities via `apt`:
 ```bash
-sudo apt install jq bc python3-pillow network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils grim ffmpeg wf-recorder wl-clipboard hyprlock curl zenity hyprpaper
+sudo apt install jq bc python3 python3-pillow python3-dbus python3-gi kdeconnect network-manager bluez wireplumber brightnessctl libnotify-bin psmisc procps xdg-utils xdg-user-dirs grim slurp ffmpeg wf-recorder wl-clipboard cliphist curl zenity kitty fish starship playerctl
 ```
 * **Quickshell & Matugen**: Build from source (cargo / github releases).
+* **Debian backports**: use `./install.sh` or manually add your codename backports suite before installing Hyprland packages.
 
 #### NixOS
 
@@ -100,10 +115,11 @@ This will automatically pull all required package dependencies and symlink the `
 Add the following package names to your `environment.systemPackages` or Home Manager config:
 * `pkgs.quickshell` (available in nixpkgs-unstable)
 * `pkgs.matugen` (available in nixpkgs-unstable)
-* `pkgs.jq`, `pkgs.bc`, `pkgs.python3Packages.pillow`
+* `pkgs.jq`, `pkgs.bc`, Python with `dbus-python`, `pygobject3`, `pillow`, and `requests`
 * `pkgs.brightnessctl`, `pkgs.libnotify`, `pkgs.psmisc`, `pkgs.procps`, `pkgs.xdg-utils`
-* `pkgs.grim`, `pkgs.ffmpeg`, `pkgs.wf-recorder`, `pkgs.wl-clipboard`
-* `pkgs.cliphist`, `pkgs.hyprlock`, `pkgs.curl`, `pkgs.zenity`
+* `pkgs.grim`, `pkgs.slurp`, `pkgs.ffmpeg`, `pkgs.wf-recorder`, `pkgs.wl-clipboard`
+* `pkgs.cliphist`, `pkgs.hyprlock`, `pkgs.hyprpaper`, `pkgs.hyprshot`, `pkgs.curl`, `pkgs.zenity`
+* `pkgs.kitty`, `pkgs.fish`, `pkgs.starship`, `pkgs.playerctl`
 * `pkgs.swww` or `pkgs.hyprpaper`
 * Enable bluetooth, networkmanager, and hyprland using their respective NixOS system options.
 

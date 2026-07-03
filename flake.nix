@@ -23,8 +23,20 @@
             (python3.withPackages (ps: [
               ps.dbus-python
               ps.pygobject3
+              ps.pillow
+              ps.requests
             ]))
             kdePackages.kdeconnect-kde
+            hyprland
+            hyprlock
+            hyprpaper
+            hyprpolkitagent
+            hyprshot
+            networkmanager
+            bluez
+            wireplumber
+            blueman
+            power-profiles-daemon
             jq
             bc
             brightnessctl
@@ -32,22 +44,40 @@
             psmisc
             procps
             xdg-utils
+            xdg-user-dirs
+            xdg-desktop-portal
+            xdg-desktop-portal-hyprland
+            dbus
+            fontconfig
+            glib
+            polkit
             cmake
             ninja
             pkg-config
             gcc
             qt6.qtbase
-            qt6.qtnetworkauth
+            qt6.qtdeclarative
+            qt6.qt5compat
+            qt6.qtwayland
+            qt6.qtsvg
+            wayland
+            wayland-protocols
+            libxkbcommon
+            linux-pam
+            pipewire
             libsecret
             grim
+            slurp
             ffmpeg
             wf-recorder
             wl-clipboard
             cliphist
-            hyprlock
             curl
             zenity
-            hyprpaper
+            kitty
+            fish
+            starship
+            playerctl
             nerd-fonts.jetbrains-mono
           ];
 

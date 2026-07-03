@@ -19,30 +19,44 @@ for helper in "${HELPERS[@]}"; do
 done
 
 if [ -z "$AUR_HELPER" ]; then
-    echo "Ошибка: Не найден AUR хелпер (проверены: yay, paru, pikaur, aura, trizen, pakku)."
-    echo "Установите один из них для установки AUR-зависимостей."
-    exit 1
+    echo "⚠️ Не найден AUR хелпер (проверены: yay, paru, pikaur, aura, trizen, pakku)."
+    echo "Официальные пакеты будут установлены, AUR-зависимости будут пропущены."
+else
+    echo "Используется AUR хелпер: $AUR_HELPER"
 fi
-
-echo "Используется AUR хелпер: $AUR_HELPER"
 echo ""
 
 # 2. Pacman Packages
 PACMAN_PACKAGES=(
     "hyprland"
     "quickshell"
+    "hyprlock"
+    "hyprpaper"
+    "hyprpolkitagent"
     "ttf-roboto"
     "inter-font"
     "ttf-jetbrains-mono-nerd"
+    "fontconfig"
     "cmake"
     "ninja"
     "gcc"
+    "rust"
+    "cargo"
     "pkgconf"
     "qt6-base"
-    "qt6-networkauth"
+    "qt6-declarative"
+    "qt6-5compat"
+    "qt6-wayland"
+    "qt6-svg"
+    "wayland-protocols"
+    "libxkbcommon"
+    "pam"
+    "pipewire"
     "libsecret"
     "jq"
     "python"
+    "python-pillow"
+    "python-requests"
     "python-dbus"
     "python-gobject"
     "kdeconnect"
@@ -53,18 +67,28 @@ PACMAN_PACKAGES=(
     "libnotify"
     "blueman"
     "grim"
+    "slurp"
     "ffmpeg"
     "wf-recorder"
     "wl-clipboard"
     "hyprshot"
     "cliphist"
-    "hyprlock"
     "curl"
     "unzip"
     "zenity"
+    "kitty"
+    "fish"
+    "starship"
+    "playerctl"
     "psmisc"
     "procps-ng"
     "xdg-utils"
+    "xdg-user-dirs"
+    "xdg-desktop-portal"
+    "xdg-desktop-portal-hyprland"
+    "dbus"
+    "glib2"
+    "polkit"
     "power-profiles-daemon"
     "bc"
 )
@@ -82,10 +106,26 @@ echo ""
 sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
 
 echo ""
-echo "Установка пакетов из AUR..."
-echo "Пакеты: ${AUR_PACKAGES[*]}"
-echo ""
-$AUR_HELPER -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+if [ -n "$AUR_HELPER" ]; then
+    echo "Установка пакетов из AUR..."
+    echo "Пакеты: ${AUR_PACKAGES[*]}"
+    echo ""
+    $AUR_HELPER -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+else
+    echo "Пропуск AUR-пакетов: ${AUR_PACKAGES[*]}"
+fi
+
+if ! command -v matugen &> /dev/null; then
+    if command -v cargo &> /dev/null; then
+        read -p "Matugen не найден. Установить его через Cargo? (Y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            cargo install matugen --locked
+        fi
+    else
+        echo "⚠️ Matugen не найден, Cargo тоже не найден. Установите matugen вручную."
+    fi
+fi
 
 # 4. Check for Notification Daemon Conflicts
 echo ""
@@ -121,7 +161,9 @@ COMMANDS=(
     "hyprctl:hyprland"
     "hyprshot:hyprshot"
     "hyprlock:hyprlock"
+    "hyprpaper:hyprpaper"
     "grim:grim"
+    "slurp:slurp"
     "ffmpeg:ffmpeg"
     "wf-recorder:wf-recorder"
     "wl-copy:wl-clipboard"
@@ -137,7 +179,13 @@ COMMANDS=(
     "kdeconnectd:kdeconnect"
     "curl:curl"
     "zenity:zenity"
-    "matugen:matugen-bin (AUR)"
+    "kitty:kitty"
+    "fish:fish"
+    "starship:starship"
+    "playerctl:playerctl"
+    "xdg-user-dir:xdg-user-dirs"
+    "dbus-update-activation-environment:dbus"
+    "matugen:matugen-bin (AUR) or Cargo"
     "cmake:cmake"
     "ninja:ninja"
     "killall:psmisc"
