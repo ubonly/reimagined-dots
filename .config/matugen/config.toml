@@ -5,7 +5,7 @@ wallpaper_tool = "hyprpaper"
 [templates.kitty]
 input_path = "~/.config/matugen/templates/kitty-colors.conf"
 output_path = "~/.config/kitty/colors.conf"
-post_hook = "/home/ubonly/.config/matugen/apply-kitty.sh"
+post_hook = "~/.config/matugen/apply-kitty.sh"
 
 [templates.gtk3]
 input_path = "~/.config/matugen/templates/gtk-3.0/gtk.css"
@@ -18,7 +18,7 @@ output_path = "~/.config/gtk-4.0/gtk.css"
 [templates.primary]
 input_path = "~/.config/matugen/templates/primary.txt"
 output_path = "~/.config/quickshell/primary_color.txt"
-post_hook = "/home/ubonly/.config/matugen/apply-kde.sh"
+post_hook = "~/.config/matugen/apply-kde.sh"
 
 [templates.hyprland]
 input_path = "~/.config/matugen/templates/hyprland-colors.conf"
@@ -27,4 +27,3 @@ output_path = "~/.config/hypr/myColors.conf"
 [templates.hyprlock]
 input_path = "~/.config/matugen/templates/hyprlock-colors.conf"
 output_path = "~/.config/hypr/hyprlock-colors.conf"
-
