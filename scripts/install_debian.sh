@@ -80,6 +80,37 @@ install_apt_available() {
     fi
 }
 
+install_apt_available_from_suite() {
+    local suite="$1"
+    local label="$2"
+    shift 2
+
+    local available=()
+    local missing=()
+    local pkg
+    for pkg in "$@"; do
+        if apt_package_available "$pkg"; then
+            available+=("$pkg")
+        else
+            missing+=("$pkg")
+        fi
+    done
+
+    if [ ${#available[@]} -gt 0 ]; then
+        echo ""
+        echo "Установка $label через apt ($suite как target release)..."
+        echo "Пакеты: ${available[*]}"
+        sudo apt install -y -t "$suite" "${available[@]}"
+    fi
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo ""
+        echo "⚠️  Эти пакеты не найдены в текущих apt-репозиториях и будут пропущены:"
+        printf '  - %s\n' "${missing[@]}"
+        APT_SKIPPED+=("${missing[@]}")
+    fi
+}
+
 install_apt_backports_available() {
     local suite="$1"
     shift
@@ -199,7 +230,11 @@ if BACKPORT_SUITE="$(enable_debian_backports)"; then
     sudo apt update
 fi
 
-install_apt_available "системных пакетов Debian/Ubuntu" "${APT_BASE_PACKAGES[@]}"
+if [ -n "$BACKPORT_SUITE" ]; then
+    install_apt_available_from_suite "$BACKPORT_SUITE" "системных пакетов Debian" "${APT_BASE_PACKAGES[@]}"
+else
+    install_apt_available "системных пакетов Debian/Ubuntu" "${APT_BASE_PACKAGES[@]}"
+fi
 
 if [ -n "$BACKPORT_SUITE" ]; then
     install_apt_backports_available "$BACKPORT_SUITE" "${DEBIAN_BACKPORT_PACKAGES[@]}"
