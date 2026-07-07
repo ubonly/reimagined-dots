@@ -181,7 +181,10 @@ reimagined-dots/
         │   ├── BrightnessService.qml
         │   ├── NetworkService.qml
         │   └── MprisService.qml
-        ├── list-apps.py
+        ├── launcher/
+        │   ├── appctl.sh
+        │   ├── build.sh
+        │   └── src/
         ├── cliphist.py
         ├── clipboard_pin.py
         ├── list-recent.py

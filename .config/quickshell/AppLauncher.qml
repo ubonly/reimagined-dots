@@ -199,6 +199,7 @@ PanelWindow {
     property string _appListBuffer: ""
     property string _appFingerprintBuffer: ""
     property string appListGeneration: ""
+    readonly property string appBackendPath: Qt.resolvedUrl("launcher/appctl.sh").toString().replace("file://", "")
     readonly property int maxSearchResults: 10
     readonly property var searchAliases: ({
         "vsc": ["visual studio code", "code-oss", "vscode", "code"],
@@ -328,7 +329,7 @@ PanelWindow {
 
     Process {
         id: listProc
-        command: ["python3", "-B", Qt.resolvedUrl("list-apps.py").toString().replace("file://", "")]
+        command: [launcher.appBackendPath, "list"]
         running: false
         stdout: SplitParser {
             onRead: function(line) { launcher._appListBuffer += line }
@@ -350,7 +351,7 @@ PanelWindow {
 
     Process {
         id: appFingerprintProc
-        command: ["python3", "-B", Qt.resolvedUrl("list-apps.py").toString().replace("file://", ""), "--fingerprint"]
+        command: [launcher.appBackendPath, "fingerprint"]
         running: false
         stdout: SplitParser {
             onRead: function(line) { launcher._appFingerprintBuffer += line }

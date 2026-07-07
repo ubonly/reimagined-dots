@@ -293,6 +293,16 @@ if [ -x "$CONFIG_DIR/accounts/build.sh" ]; then
     fi
 fi
 
+if [ -x "$CONFIG_DIR/launcher/build.sh" ]; then
+    echo ""
+    echo "Сборка Launcher helper..."
+    if "$CONFIG_DIR/launcher/build.sh"; then
+        echo "Launcher helper собран."
+    else
+        echo "⚠️ Не удалось собрать Launcher helper. App Launcher будет использовать последний кэш приложений."
+    fi
+fi
+
 # ─── 6. Создаём директорию для обоев ───────────────────────────────────────
 mkdir -p "$HOME/Pictures/Wallpapers"
 
