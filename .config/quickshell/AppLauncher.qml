@@ -196,7 +196,9 @@ PanelWindow {
     property int activeIndex: 0
     property string activeSection: "apps"
     property int recentIndex: 0
-    property string _buf: ""
+    property string _appListBuffer: ""
+    property string _appFingerprintBuffer: ""
+    property string appListGeneration: ""
     readonly property int maxSearchResults: 10
     readonly property var searchAliases: ({
         "vsc": ["visual studio code", "code-oss", "vscode", "code"],
@@ -326,22 +328,48 @@ PanelWindow {
 
     Process {
         id: listProc
-        command: ["python3", Qt.resolvedUrl("list-apps.py").toString().replace("file://", "")]
+        command: ["python3", "-B", Qt.resolvedUrl("list-apps.py").toString().replace("file://", "")]
         running: false
         stdout: SplitParser {
-            onRead: function(line) { launcher._buf += line }
+            onRead: function(line) { launcher._appListBuffer += line }
         }
         onRunningChanged: {
-            if (!running && launcher._buf.length > 2) {
+            if (!running && launcher._appListBuffer.length > 2) {
                 try {
-                    var arr = JSON.parse(launcher._buf)
+                    var arr = JSON.parse(launcher._appListBuffer)
                     arr.sort(function(a, b) { return a.name.localeCompare(b.name) })
                     launcher.allApps = arr
                     launcher.filterApps()
                 } catch(e) { console.log("parse error:", e) }
-                launcher._buf = ""
+                launcher._appListBuffer = ""
             } else if (running) {
-                launcher._buf = ""
+                launcher._appListBuffer = ""
+            }
+        }
+    }
+
+    Process {
+        id: appFingerprintProc
+        command: ["python3", "-B", Qt.resolvedUrl("list-apps.py").toString().replace("file://", ""), "--fingerprint"]
+        running: false
+        stdout: SplitParser {
+            onRead: function(line) { launcher._appFingerprintBuffer += line }
+        }
+        onRunningChanged: {
+            if (running) {
+                launcher._appFingerprintBuffer = ""
+                return
+            }
+
+            var generation = launcher._appFingerprintBuffer
+            launcher._appFingerprintBuffer = ""
+            if (generation.length === 0)
+                return
+
+            if (launcher.appListGeneration !== generation || launcher.allApps.length === 0) {
+                launcher.appListGeneration = generation
+                if (!listProc.running)
+                    listProc.running = true
             }
         }
     }
@@ -349,6 +377,12 @@ PanelWindow {
     Component.onCompleted: {
         listProc.running = true
         recentReadProc.running = true
+        appFingerprintProc.running = true
+    }
+
+    function refreshAppsIfNeeded() {
+        if (!appFingerprintProc.running)
+            appFingerprintProc.running = true
     }
 
     function normalizeSearchText(value) {
@@ -576,6 +610,7 @@ PanelWindow {
 
     function toggle() {
         if (!isOpen) {
+            refreshAppsIfNeeded()
             searchText = ""
             filterApps()
             resetSelectionForEmptySearch()
@@ -1062,7 +1097,7 @@ PanelWindow {
         Connections {
             target: launcher
             function onActiveIndexChanged() { appScroll.ensureActiveVisible() }
-            function onFilteredAppsChanged() { appScroll.contentY = 0 }
+            function onFilteredAppsChanged() { appScroll.contentY = appScroll.topContentY() }
         }
     }
 }
