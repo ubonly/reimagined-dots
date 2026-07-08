@@ -225,6 +225,37 @@ ShellRoot {
             property var clientsByWs: ({})
             property var clientIconsByWs: ({})
             property string _buf: ""
+            property bool dockFullscreenHidden: false
+            property real dockHideOffset: dockFullscreenHidden ? root.dockPanelHeight + 12 : 0
+            readonly property real dockContentYOffset: UnlockTransitionService.dockYOffset + dockHideOffset
+
+            Behavior on dockHideOffset {
+                NumberAnimation {
+                    duration: screenItem.dockFullscreenHidden ? 210 : 280
+                    easing.type: screenItem.dockFullscreenHidden ? Easing.InCubic : Easing.OutBack
+                    easing.overshoot: 1.25
+                }
+            }
+
+            function refreshDockFullscreenState() {
+                if (!dockFullscreenProc.running)
+                    dockFullscreenProc.running = true
+            }
+
+            Connections {
+                target: Hyprland
+                function onRawEvent(event) {
+                    if (event.name === "fullscreen"
+                            || event.name === "activewindow"
+                            || event.name === "workspace"
+                            || event.name === "focusedmon"
+                            || event.name === "openwindow"
+                            || event.name === "closewindow"
+                            || event.name === "movewindow") {
+                        dockFullscreenDebounce.restart()
+                    }
+                }
+            }
 
             Process {
                 id: hyprctlProc
@@ -257,7 +288,34 @@ ShellRoot {
 
             Timer {
                 interval: 1500; repeat: true; running: true
-                onTriggered: hyprctlProc.running = true
+                onTriggered: {
+                    hyprctlProc.running = true
+                    screenItem.refreshDockFullscreenState()
+                }
+            }
+
+            Timer {
+                id: dockFullscreenDebounce
+                interval: 80
+                repeat: false
+                onTriggered: screenItem.refreshDockFullscreenState()
+            }
+
+            Process {
+                id: dockFullscreenProc
+                command: ["bash", "-lc",
+                    "mon=\"$1\"\n" +
+                    "state=$(hyprctl monitors -j 2>/dev/null | jq -r --arg name \"$mon\" '.[] | select(.name == $name) | \"\\(.id) \\(.activeWorkspace.id)\"' | head -n1)\n" +
+                    "[ -n \"$state\" ] || { printf 'false\\n'; exit 0; }\n" +
+                    "set -- $state\n" +
+                    "hyprctl clients -j 2>/dev/null | jq -r --argjson mon \"$1\" --argjson ws \"$2\" 'any(.[]; (.monitor == $mon) and (.workspace.id == $ws) and ((.fullscreen | tonumber) > 0 or (.fullscreenClient | tonumber) > 0) and (.mapped != false) and (.hidden != true))' 2>/dev/null || printf 'false\\n'",
+                    "--", modelData.name]
+                running: true
+                stdout: SplitParser {
+                    onRead: function(line) {
+                        screenItem.dockFullscreenHidden = line.trim() === "true"
+                    }
+                }
             }
 
             // QuickSettings popup (отдельный PanelWindow, теперь будет снизу)
@@ -410,7 +468,7 @@ ShellRoot {
                     implicitWidth: modelData.width
                     implicitHeight: root.dockPanelHeight
 
-                    exclusiveZone: root.dockPanelHeight
+                    exclusiveZone: screenItem.dockFullscreenHidden ? 0 : root.dockPanelHeight
 
                 WlrLayershell.layer:     WlrLayer.Top
                 WlrLayershell.namespace: "quickshell-dock"
@@ -434,7 +492,7 @@ ShellRoot {
                     opacity: UnlockTransitionService.dockOpacity
                     scale: UnlockTransitionService.dockScale
                     transformOrigin: Item.Bottom
-                    transform: Translate { y: UnlockTransitionService.dockYOffset }
+                    transform: Translate { y: screenItem.dockContentYOffset }
                 }
 
                 // ── Far-left: G launcher button ────────────────────────────
@@ -445,10 +503,11 @@ ShellRoot {
                         verticalCenter: parent.verticalCenter
                     }
                     width: 38; height: 38; radius: 19
+                    enabled: !screenItem.dockFullscreenHidden
                     opacity: UnlockTransitionService.dockOpacity
                     scale: UnlockTransitionService.dockScale
                     transformOrigin: Item.Bottom
-                    transform: Translate { y: UnlockTransitionService.dockYOffset }
+                    transform: Translate { y: screenItem.dockContentYOffset }
                     color: (appLauncherInst && appLauncherInst.isOpen) || launcherBtnArea.containsMouse
                         ? Theme.dockPillHover
                         : Theme.dockPill
@@ -504,9 +563,10 @@ ShellRoot {
                         }
                         width: recRow.implicitWidth + 16
                         height: 32; radius: 16
+                        enabled: !screenItem.dockFullscreenHidden
                         scale: UnlockTransitionService.dockScale
                         transformOrigin: Item.Bottom
-                        transform: Translate { y: UnlockTransitionService.dockYOffset }
+                        transform: Translate { y: screenItem.dockContentYOffset }
                         color: Qt.rgba(0.85, 0.12, 0.12, 0.25)
                         border.color: Qt.rgba(0.85, 0.12, 0.12, 0.6)
                         border.width: 1
@@ -558,10 +618,11 @@ ShellRoot {
                         id: dockRow
                         anchors.centerIn: parent
                         spacing: 0
+                        enabled: !screenItem.dockFullscreenHidden
                         opacity: UnlockTransitionService.dockOpacity
                         scale: UnlockTransitionService.dockScale
                         transformOrigin: Item.Bottom
-                        transform: Translate { y: UnlockTransitionService.dockYOffset }
+                        transform: Translate { y: screenItem.dockContentYOffset }
 
                         Repeater {
                             model: 10
@@ -596,10 +657,11 @@ ShellRoot {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 2
+                        enabled: !screenItem.dockFullscreenHidden
                         opacity: UnlockTransitionService.dockOpacity
                         scale: UnlockTransitionService.dockScale
                         transformOrigin: Item.Bottom
-                        transform: Translate { y: UnlockTransitionService.dockYOffset }
+                        transform: Translate { y: screenItem.dockContentYOffset }
 
                         // (Recording indicator moved next to launcher button)
 
