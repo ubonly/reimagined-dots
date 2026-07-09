@@ -84,6 +84,8 @@
           # Automatically link the configuration files to ~/.config
           xdg.configFile."quickshell".source = ./.config/quickshell;
           xdg.configFile."matugen".source = ./.config/matugen;
+          home.file.".local/share/fonts/ReimaginedSans".source = ./.config/quickshell/sans_font;
+          fonts.fontconfig.enable = true;
         };
       };
   };

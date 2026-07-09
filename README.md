@@ -26,7 +26,6 @@ If you prefer to install things by hand, you will need:
 - `ttf-roboto`
 - `inter-font`
 - `ttf-jetbrains-mono-nerd`
-- `ttf-google-sans`
 - `ttf-material-symbols-variable-git`
 - `fontconfig`
 - `jq`
@@ -59,6 +58,8 @@ If you prefer to install things by hand, you will need:
 - `playerctl`
 - `swww` or `hyprpaper` (for static wallpaper rendering)
 - `mpvpaper` (optional, for video wallpaper rendering)
+
+Google Sans is bundled in `.config/quickshell/sans_font` and installed by `install.sh` into `~/.local/share/fonts/ReimaginedSans`, so it does not need an AUR or distribution package.
 
 ### Other Distributions Compatibility
 

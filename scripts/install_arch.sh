@@ -97,7 +97,6 @@ PACMAN_PACKAGES=(
 
 # 3. AUR Packages
 AUR_PACKAGES=(
-    "ttf-google-sans"
     "ttf-material-symbols-variable-git"
 )
 

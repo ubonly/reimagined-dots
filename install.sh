@@ -44,12 +44,24 @@ install_user_fonts_and_aliases() {
 
     local fonts_dir="$HOME/.local/share/fonts"
     local fontconfig_dir="$HOME/.config/fontconfig/conf.d"
+    local bundled_fonts_dir="$SCRIPT_DIR/.config/quickshell/sans_font"
+    local bundled_target_dir="$fonts_dir/ReimaginedSans"
     local need_fc_cache=0
 
     mkdir -p "$fonts_dir" "$fontconfig_dir"
 
     if ! command -v fc-match >/dev/null 2>&1; then
-        echo "⚠️ fontconfig/fc-match не найден, установка шрифтов ограничена скачиванием файлов."
+        echo "⚠️ fontconfig/fc-match не найден, шрифты будут скопированы, но кэш может не обновиться."
+    fi
+
+    if [ -d "$bundled_fonts_dir" ]; then
+        echo "Установка bundled Google Sans из .config/quickshell/sans_font..."
+        rm -rf "$bundled_target_dir"
+        mkdir -p "$bundled_target_dir"
+        cp -r "$bundled_fonts_dir"/. "$bundled_target_dir"/
+        need_fc_cache=1
+    else
+        echo "⚠️ bundled Google Sans не найден: $bundled_fonts_dir"
     fi
 
     if command -v curl >/dev/null 2>&1; then
@@ -105,8 +117,17 @@ install_user_fonts_and_aliases() {
     <family>Google Sans Text</family>
     <prefer>
       <family>Google Sans Text</family>
+      <family>Google Sans</family>
       <family>Inter</family>
       <family>Noto Sans</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>Google Sans Code</family>
+    <prefer>
+      <family>Google Sans Code</family>
+      <family>JetBrains Mono Nerd Font</family>
+      <family>monospace</family>
     </prefer>
   </alias>
   <alias>
