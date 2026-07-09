@@ -2014,7 +2014,7 @@ FloatingWindow {
                                             text: "Pop-up notifications"
                                             font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
                                             color: settingsRoot.activeItem
-                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                            Layout.leftMargin: 12; Layout.topMargin: 18
                                         }
 
                                         Rectangle {
@@ -2031,104 +2031,109 @@ FloatingWindow {
                                                 anchors { fill: parent; margins: 16 }
                                                 spacing: 16
 
-                                                RowLayout {
+                                                Item {
                                                     Layout.fillWidth: true
-                                                    spacing: 18
+                                                    implicitHeight: 56
 
-                                                    Rectangle {
-                                                        Layout.preferredWidth: 40
-                                                        Layout.preferredHeight: 40
-                                                        radius: 20
-                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
-                                                        border.width: 1
-                                                        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
-
-                                                        SvgIcon {
-                                                            anchors.centerIn: parent
-                                                            iconSource: "assets/icons/notifications.svg"
-                                                            iconSize: 20
-                                                            iconColor: settingsRoot.textPrimary
-                                                        }
-                                                    }
-
-                                                    ColumnLayout {
-                                                        spacing: 2
-                                                        Layout.alignment: Qt.AlignVCenter
-
-                                                        Text {
-                                                            text: "Pop-up opacity"
-                                                            font.pixelSize: 14
-                                                            font.family: "Google Sans"
-                                                            font.weight: Font.Medium
-                                                            color: settingsRoot.textPrimary
-                                                        }
-
-                                                        Text {
-                                                            text: "Adjust transparency of notification toasts"
-                                                            font.pixelSize: 12
-                                                            font.family: "Google Sans"
-                                                            color: settingsRoot.textSecondary
-                                                        }
-                                                    }
-
-                                                    Item { Layout.fillWidth: true }
-
-                                                    Rectangle {
-                                                        id: notificationOpacityTrack
-                                                        Layout.preferredWidth: 220
-                                                        Layout.preferredHeight: 8
-                                                        radius: 4
-                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
-
-                                                        function setFromMouse(mouseX) {
-                                                            let normalized = Math.max(0, Math.min(1, mouseX / width));
-                                                            settingsRoot.updateNotificationPopupOpacity(0.25 + normalized * 0.75);
-                                                        }
+                                                    RowLayout {
+                                                        anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
+                                                        spacing: 14
 
                                                         Rectangle {
-                                                            anchors.left: parent.left
-                                                            anchors.verticalCenter: parent.verticalCenter
-                                                            width: parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75)
-                                                            height: parent.height
-                                                            radius: parent.radius
-                                                            color: settingsRoot.activeItem
-                                                        }
+                                                            Layout.preferredWidth: 40
+                                                            Layout.preferredHeight: 40
+                                                            radius: 20
+                                                            color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                            border.width: 1
+                                                            border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
 
-                                                        Rectangle {
-                                                            width: 20; height: 20; radius: 10
-                                                            anchors.verticalCenter: parent.verticalCenter
-                                                            x: Math.max(0, Math.min(parent.width - width, parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75) - width / 2))
-                                                            color: settingsRoot.textPrimary
-                                                            border.color: settingsRoot.bgColor
-                                                            border.width: 2
-                                                        }
-
-                                                        MouseArea {
-                                                            anchors.fill: parent
-                                                            cursorShape: Qt.PointingHandCursor
-                                                            property bool dragging: false
-                                                            onPressed: {
-                                                                dragging = true
-                                                                notificationOpacityTrack.setFromMouse(mouse.x)
+                                                            SvgIcon {
+                                                                anchors.centerIn: parent
+                                                                iconSource: "assets/icons/notifications.svg"
+                                                                iconSize: 20
+                                                                iconColor: settingsRoot.textPrimary
                                                             }
-                                                            onPositionChanged: {
-                                                                if (dragging)
+                                                        }
+
+                                                        ColumnLayout {
+                                                            spacing: 2
+                                                            Layout.alignment: Qt.AlignVCenter
+
+                                                            Text {
+                                                                text: "Pop-up opacity"
+                                                                font.pixelSize: 14
+                                                                font.family: "Google Sans"
+                                                                font.weight: Font.Medium
+                                                                color: settingsRoot.textPrimary
+                                                            }
+
+                                                            Text {
+                                                                text: "Adjust transparency of notification toasts"
+                                                                font.pixelSize: 12
+                                                                font.family: "Google Sans"
+                                                                color: settingsRoot.textSecondary
+                                                            }
+                                                        }
+
+                                                        Item { Layout.fillWidth: true }
+
+                                                        Rectangle {
+                                                            id: notificationOpacityTrack
+                                                            Layout.preferredWidth: 220
+                                                            Layout.preferredHeight: 8
+                                                            radius: 4
+                                                            color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
+
+                                                            function setFromMouse(mouseX) {
+                                                                let normalized = Math.max(0, Math.min(1, mouseX / width));
+                                                                settingsRoot.updateNotificationPopupOpacity(0.25 + normalized * 0.75);
+                                                            }
+
+                                                            Rectangle {
+                                                                anchors.left: parent.left
+                                                                anchors.verticalCenter: parent.verticalCenter
+                                                                width: parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75)
+                                                                height: parent.height
+                                                                radius: parent.radius
+                                                                color: settingsRoot.activeItem
+                                                            }
+
+                                                            Rectangle {
+                                                                width: 20; height: 20; radius: 10
+                                                                anchors.verticalCenter: parent.verticalCenter
+                                                                x: Math.max(0, Math.min(parent.width - width, parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75) - width / 2))
+                                                                color: settingsRoot.textPrimary
+                                                                border.color: settingsRoot.bgColor
+                                                                border.width: 2
+                                                            }
+
+                                                            MouseArea {
+                                                                anchors.fill: parent
+                                                                cursorShape: Qt.PointingHandCursor
+                                                                property bool dragging: false
+                                                                onPressed: {
+                                                                    dragging = true
                                                                     notificationOpacityTrack.setFromMouse(mouse.x)
+                                                                }
+                                                                onPositionChanged: {
+                                                                    if (dragging)
+                                                                        notificationOpacityTrack.setFromMouse(mouse.x)
+                                                                }
+                                                                onReleased: dragging = false
+                                                                onCanceled: dragging = false
                                                             }
-                                                            onReleased: dragging = false
-                                                            onCanceled: dragging = false
                                                         }
-                                                    }
 
-                                                    Text {
-                                                        text: Math.round(settingsRoot.notificationPopupOpacity * 100) + "%"
-                                                        font.pixelSize: 13
-                                                        font.family: "Google Sans"
-                                                        font.weight: 600
-                                                        color: settingsRoot.textPrimary
-                                                        horizontalAlignment: Text.AlignRight
-                                                        Layout.preferredWidth: 44
-                                                        Layout.alignment: Qt.AlignVCenter
+                                                        Text {
+                                                            text: Math.round(settingsRoot.notificationPopupOpacity * 100) + "%"
+                                                            font.pixelSize: 13
+                                                            font.family: "Google Sans"
+                                                            font.weight: 600
+                                                            color: settingsRoot.textPrimary
+                                                            horizontalAlignment: Text.AlignRight
+                                                            Layout.preferredWidth: 44
+                                                            Layout.alignment: Qt.AlignVCenter
+                                                        }
                                                     }
                                                 }
 
