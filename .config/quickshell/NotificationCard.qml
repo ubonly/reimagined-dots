@@ -21,6 +21,7 @@ Rectangle {
     property var    actions:      notification ? (notification.actions || []) : []
     property bool expanded: false
     property bool scrolling: false
+    property bool _entered: false
 
     readonly property color cBg:        Theme.notificationCardBg
     readonly property color cBgHover:   Theme.notificationHover
@@ -30,6 +31,8 @@ Rectangle {
     readonly property color cTextTitle: Theme.colorOnSurface
     readonly property bool hasImage: imagePath.length > 0
     readonly property bool hasExpandableContent: bodyText.length > 0 || hasImage || (showActions && actions.length > 0)
+    readonly property real popupTargetOpacity: ConfigService.ready ? Math.max(0.25, Math.min(1.0, ConfigService.values.notificationPopupOpacity)) : 1.0
+    readonly property bool showBodyPreview: ConfigService.ready ? ConfigService.values.notificationShowBodyPreview : true
 
     implicitHeight: cardLayout.implicitHeight + 28
     Behavior on implicitHeight { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -44,9 +47,14 @@ Rectangle {
     Component.onCompleted: {
         slideIn.y = 0
         if (isPopup) {
-            opacity = 1
+            _entered = true
+            opacity = popupTargetOpacity
             dismissTimer.start()
         }
+    }
+    onPopupTargetOpacityChanged: {
+        if (card.isPopup && card._entered)
+            opacity = popupTargetOpacity
     }
     Behavior on opacity {
         enabled: card.isPopup
@@ -217,6 +225,18 @@ Rectangle {
                 elide: Text.ElideRight
                 maximumLineCount: 2
                 visible: text.length > 0
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: card.bodyText
+                color: card.cTextBody
+                font { pixelSize: 13; family: "Google Sans" }
+                wrapMode: Text.NoWrap
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                maximumLineCount: 1
+                visible: !card.expanded && card.showBodyPreview && text.length > 0
             }
 
             Text {

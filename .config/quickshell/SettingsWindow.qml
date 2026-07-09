@@ -58,6 +58,9 @@ FloatingWindow {
     readonly property string dockLauncherIconMode: ConfigService.ready && ConfigService.values.dockLauncherIconMode === "distro" ? "distro" : "google"
     readonly property bool extraFeaturesEnabled: ConfigService.ready ? ConfigService.values.extraFeaturesEnabled : false
     readonly property string matugenScheme: ConfigService.ready ? ConfigService.values.matugenScheme : "auto"
+    readonly property real notificationPopupOpacity: ConfigService.ready ? ConfigService.values.notificationPopupOpacity : 1.0
+    readonly property bool notificationShowBodyPreview: ConfigService.ready ? ConfigService.values.notificationShowBodyPreview : true
+    readonly property bool notificationPersistHistory: ConfigService.ready ? ConfigService.values.notificationPersistHistory : true
     property string googleClientIdDraft: ""
     property string googleClientSecretDraft: ""
 
@@ -75,6 +78,16 @@ FloatingWindow {
     }
     function updateDockLauncherIconMode(mode) {
         if (ConfigService.ready) ConfigService.values.dockLauncherIconMode = mode === "distro" ? "distro" : "google";
+    }
+
+    function updateNotificationPopupOpacity(value) {
+        if (ConfigService.ready) ConfigService.values.notificationPopupOpacity = Math.max(0.25, Math.min(1.0, value));
+    }
+    function updateNotificationShowBodyPreview(enabled) {
+        if (ConfigService.ready) ConfigService.values.notificationShowBodyPreview = enabled;
+    }
+    function updateNotificationPersistHistory(enabled) {
+        if (ConfigService.ready) ConfigService.values.notificationPersistHistory = enabled;
     }
 
     function setThemeMode(mode) {
@@ -113,7 +126,7 @@ FloatingWindow {
         var parsed = parseInt(page, 10);
         if (isNaN(parsed))
             return 3;
-        return Math.max(2, Math.min(8, parsed));
+        return Math.max(2, Math.min(9, parsed));
     }
 
     function restoreSettingsPage() {
@@ -835,6 +848,7 @@ FloatingWindow {
                         NavItem { navIconSource: "assets/icons/account-circle.svg";     navTitle: "Google sync";         navSub: "Account, lock screen";         navIndex: 8 }
                         NavItem { navIconSource: "assets/icons/wallpaper.svg";          navTitle: "Wallpaper and style"; navSub: "Dark theme, screen saver";     navIndex: 3 }
                         NavItem { navIconSource: "assets/icons/apps.svg";               navTitle: "Dock";                navSub: "Shelf style and behavior";     navIndex: 4 }
+                        NavItem { navIconSource: "assets/icons/notifications.svg";      navTitle: "Notifications";       navSub: "Popups, previews, history";    navIndex: 9 }
                         NavItem { navIconSource: "assets/icons/accessibility.svg";      navTitle: "Accessibility";       navSub: "Screen reader, magnification"; navIndex: 5 }
                         NavItem { navIconSource: "assets/icons/build.svg";              navTitle: "System preferences";  navSub: "Power, language, features";    navIndex: 6 }
                         NavItem { navIconSource: "assets/icons/info.svg";               navTitle: "About your system";   navSub: "Version, storage, config";     navIndex: 7 }
@@ -907,6 +921,7 @@ FloatingWindow {
                                             var titles = ["","","Integrations","Wallpaper and style",
                                                 "Dock","Accessibility","System preferences","About your system"]
                                             titles[8] = "Google sync"
+                                            titles[9] = "Notifications"
                                             return titles[settingsRoot.currentPage] || "Settings"
                                         }
                                         font.pixelSize: 15; font.family: "Google Sans"
@@ -919,7 +934,7 @@ FloatingWindow {
                                     Item {
                                         Layout.fillWidth: true
                                         implicitHeight: 120
-                                         visible: settingsRoot.currentPage !== 2 && settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7 && settingsRoot.currentPage !== 8
+                                         visible: settingsRoot.currentPage !== 2 && settingsRoot.currentPage !== 3 && settingsRoot.currentPage !== 4 && settingsRoot.currentPage !== 6 && settingsRoot.currentPage !== 7 && settingsRoot.currentPage !== 8 && settingsRoot.currentPage !== 9
                                         Text {
                                             anchors.centerIn: parent
                                             text: "Coming soon"
@@ -1984,6 +1999,192 @@ FloatingWindow {
                                                         }
                                                     }
                                                     */
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // PAGE 9: Notifications
+                                    ColumnLayout {
+                                        visible: settingsRoot.currentPage === 9
+                                        Layout.fillWidth: true
+                                        spacing: 12
+
+                                        Text {
+                                            text: "Pop-up notifications"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: notificationPopupCol.implicitHeight + 32
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: notificationPopupCol
+                                                anchors { fill: parent; margins: 16 }
+                                                spacing: 16
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 18
+
+                                                    Rectangle {
+                                                        Layout.preferredWidth: 40
+                                                        Layout.preferredHeight: 40
+                                                        radius: 20
+                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.08)
+                                                        border.width: 1
+                                                        border.color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.05)
+
+                                                        SvgIcon {
+                                                            anchors.centerIn: parent
+                                                            iconSource: "assets/icons/notifications.svg"
+                                                            iconSize: 20
+                                                            iconColor: settingsRoot.textPrimary
+                                                        }
+                                                    }
+
+                                                    ColumnLayout {
+                                                        spacing: 2
+                                                        Layout.alignment: Qt.AlignVCenter
+
+                                                        Text {
+                                                            text: "Pop-up opacity"
+                                                            font.pixelSize: 14
+                                                            font.family: "Google Sans"
+                                                            font.weight: Font.Medium
+                                                            color: settingsRoot.textPrimary
+                                                        }
+
+                                                        Text {
+                                                            text: "Adjust transparency of notification toasts"
+                                                            font.pixelSize: 12
+                                                            font.family: "Google Sans"
+                                                            color: settingsRoot.textSecondary
+                                                        }
+                                                    }
+
+                                                    Item { Layout.fillWidth: true }
+
+                                                    Rectangle {
+                                                        id: notificationOpacityTrack
+                                                        Layout.preferredWidth: 220
+                                                        Layout.preferredHeight: 8
+                                                        radius: 4
+                                                        color: Qt.rgba(settingsRoot.textPrimary.r, settingsRoot.textPrimary.g, settingsRoot.textPrimary.b, 0.12)
+
+                                                        function setFromMouse(mouseX) {
+                                                            let normalized = Math.max(0, Math.min(1, mouseX / width));
+                                                            settingsRoot.updateNotificationPopupOpacity(0.25 + normalized * 0.75);
+                                                        }
+
+                                                        Rectangle {
+                                                            anchors.left: parent.left
+                                                            anchors.verticalCenter: parent.verticalCenter
+                                                            width: parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75)
+                                                            height: parent.height
+                                                            radius: parent.radius
+                                                            color: settingsRoot.activeItem
+                                                        }
+
+                                                        Rectangle {
+                                                            width: 20; height: 20; radius: 10
+                                                            anchors.verticalCenter: parent.verticalCenter
+                                                            x: Math.max(0, Math.min(parent.width - width, parent.width * ((settingsRoot.notificationPopupOpacity - 0.25) / 0.75) - width / 2))
+                                                            color: settingsRoot.textPrimary
+                                                            border.color: settingsRoot.bgColor
+                                                            border.width: 2
+                                                        }
+
+                                                        MouseArea {
+                                                            anchors.fill: parent
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            property bool dragging: false
+                                                            onPressed: {
+                                                                dragging = true
+                                                                notificationOpacityTrack.setFromMouse(mouse.x)
+                                                            }
+                                                            onPositionChanged: {
+                                                                if (dragging)
+                                                                    notificationOpacityTrack.setFromMouse(mouse.x)
+                                                            }
+                                                            onReleased: dragging = false
+                                                            onCanceled: dragging = false
+                                                        }
+                                                    }
+
+                                                    Text {
+                                                        text: Math.round(settingsRoot.notificationPopupOpacity * 100) + "%"
+                                                        font.pixelSize: 13
+                                                        font.family: "Google Sans"
+                                                        font.weight: 600
+                                                        color: settingsRoot.textPrimary
+                                                        horizontalAlignment: Text.AlignRight
+                                                        Layout.preferredWidth: 44
+                                                        Layout.alignment: Qt.AlignVCenter
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    height: 1
+                                                    color: settingsRoot.dividerColor
+                                                }
+
+                                                SettingsRow {
+                                                    iconSource: "assets/icons/visibility.svg"
+                                                    title: "Show message preview"
+                                                    subtitle: "Show one line from the notification message"
+                                                    hasSwitch: true
+                                                    switchVal: settingsRoot.notificationShowBodyPreview
+                                                    showDivider: false
+                                                    onSwitchToggled: {
+                                                        settingsRoot.updateNotificationShowBodyPreview(!settingsRoot.notificationShowBodyPreview)
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            text: "History"
+                                            font.pixelSize: 13; font.family: "Google Sans"; font.weight: Font.Bold
+                                            color: settingsRoot.activeItem
+                                            Layout.leftMargin: 12; Layout.topMargin: 8
+                                        }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.leftMargin: 10; Layout.rightMargin: 10
+                                            implicitHeight: notificationHistoryCol.implicitHeight + 8
+                                            radius: 16
+                                            color: Qt.rgba(1,1,1,0.03)
+                                            border.color: Qt.rgba(1,1,1,0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: notificationHistoryCol
+                                                anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+                                                spacing: 0
+
+                                                SettingsRow {
+                                                    iconSource: "assets/icons/notifications.svg"
+                                                    title: "Keep notification history"
+                                                    subtitle: settingsRoot.notificationPersistHistory
+                                                              ? "Notifications remain after restarting the computer"
+                                                              : "History is cleared when the shell restarts"
+                                                    hasSwitch: true
+                                                    switchVal: settingsRoot.notificationPersistHistory
+                                                    showDivider: false
+                                                    onSwitchToggled: {
+                                                        settingsRoot.updateNotificationPersistHistory(!settingsRoot.notificationPersistHistory)
+                                                    }
                                                 }
                                             }
                                         }

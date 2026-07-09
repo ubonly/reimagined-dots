@@ -12,6 +12,7 @@ Singleton {
     readonly property string historyPath: ConfigService.configDir + "/notification_history.json"
     readonly property var popupNotifications: history.filter(function(notif) { return notif.popup })
     readonly property var groupedHistory: _groupsForList(history)
+    readonly property bool persistHistory: ConfigService.ready ? ConfigService.values.notificationPersistHistory : true
 
     property var history: []
     property int unread: 0
@@ -100,7 +101,7 @@ Singleton {
     }
 
     function _persist() {
-        if (!root.ready)
+        if (!root.ready || !root.persistHistory)
             return
         persistTimer.restart()
     }
@@ -206,13 +207,33 @@ Singleton {
         }
     }
 
-    Component.onCompleted: historyFile.reload()
+    function applyPersistenceMode() {
+        if (root.persistHistory) {
+            if (!root.ready || root.history.length === 0)
+                historyFile.reload()
+            else
+                _persist()
+            return
+        }
+
+        persistTimer.stop()
+        root.history = []
+        root.unread = 0
+        root.ready = true
+        historyFile.setText("[]")
+    }
+
+    onPersistHistoryChanged: applyPersistenceMode()
+    Component.onCompleted: applyPersistenceMode()
 
     Timer {
         id: persistTimer
         interval: 80
         repeat: false
-        onTriggered: historyFile.setText(JSON.stringify(root.history.map(root._serialize), null, 2))
+        onTriggered: {
+            if (root.persistHistory)
+                historyFile.setText(JSON.stringify(root.history.map(root._serialize), null, 2))
+        }
     }
 
     FileView {
@@ -220,6 +241,13 @@ Singleton {
         path: root.historyPath
 
         onLoaded: {
+            if (!root.persistHistory) {
+                root.history = []
+                root.unread = 0
+                root.ready = true
+                return
+            }
+
             var text = historyFile.text().trim()
             var parsed = []
             if (text.length > 0) {
@@ -255,7 +283,8 @@ Singleton {
             if (error == FileViewError.FileNotFound) {
                 root.history = []
                 root.ready = true
-                historyFile.setText("[]")
+                if (root.persistHistory)
+                    historyFile.setText("[]")
             } else {
                 console.log("Failed to load notification history:", error)
                 root.history = []

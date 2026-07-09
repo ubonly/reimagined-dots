@@ -67,6 +67,9 @@ Singleton {
             property string wallpaperPath: ""
             property string wallpaperState: ""
             property string matugenScheme: "auto"
+            property real notificationPopupOpacity: 1.0
+            property bool notificationShowBodyPreview: true
+            property bool notificationPersistHistory: true
             property bool use24Hour: true
             property int settingsPage: 3
             property real settingsWindowX: -1
