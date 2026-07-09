@@ -61,7 +61,8 @@ Item {
     property color dockActiveText: isLight ? colorOnSurface : colorOnPrimary
 
     property color notificationCenterBg: blendColor(surface, primary, isLight ? 0.025 : 0.075, 0.96)
-    property color notificationGroupBg: blendColor(surfaceVariant, primaryContainer, isLight ? 0.08 : 0.10, 0.94)
+    property color notificationGroupBg: blendColor(surfaceVariant, primary, isLight ? 0.025 : 0.035, 0.90)
+    property color notificationGroupBadgeBg: Qt.rgba(colorOnSurface.r, colorOnSurface.g, colorOnSurface.b, isLight ? 0.08 : 0.10)
     property color notificationCardBg: blendColor(surface, primaryContainer, isLight ? 0.06 : 0.08, 0.92)
     property color notificationHover: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.12 : 0.16)
     property color notificationPressed: Qt.rgba(primary.r, primary.g, primary.b, isLight ? 0.18 : 0.22)

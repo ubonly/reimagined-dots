@@ -40,7 +40,7 @@ Rectangle {
                 Layout.preferredWidth: 24
                 Layout.preferredHeight: 24
                 radius: 12
-                color: Theme.notificationIconBg
+                color: Theme.notificationGroupBadgeBg
                 clip: true
 
                 Image {
@@ -66,7 +66,7 @@ Rectangle {
                 Layout.preferredWidth: countLabel.implicitWidth + 14
                 Layout.preferredHeight: 22
                 radius: 11
-                color: Theme.notificationHover
+                color: Theme.notificationGroupBadgeBg
                 visible: groupCard.count > 1
 
                 Text {
