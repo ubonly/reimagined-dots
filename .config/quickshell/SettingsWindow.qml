@@ -95,10 +95,12 @@ FloatingWindow {
         if (!ConfigService.ready)
             return;
 
+        var previousScheme = settingsRoot.matugenScheme;
         ConfigService.values.extraFeaturesEnabled = enabled;
-        if (!enabled) {
-            ConfigService.values.matugenScheme = "auto";
-            ConfigService.values.dockIconFillEnabled = false;
+        ConfigService.values.matugenScheme = "auto";
+        ConfigService.values.dockIconFillEnabled = false;
+
+        if (!enabled || previousScheme !== "auto") {
             Quickshell.execDetached(["bash", ConfigService.configDir + "/set_theme_mode.sh", settingsRoot.themeMode, "auto"]);
         }
     }
