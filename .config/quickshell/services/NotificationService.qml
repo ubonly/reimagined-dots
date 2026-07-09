@@ -18,6 +18,7 @@ Singleton {
     property int unread: 0
     property int maxHistory: 80
     property bool ready: false
+    property bool _persistPreferenceInitialized: false
     property int _idOffset: 0
 
     signal notificationAdded(var notification)
@@ -208,7 +209,14 @@ Singleton {
     }
 
     function applyPersistenceMode() {
+        if (!ConfigService.ready) {
+            if (!root.ready)
+                historyFile.reload()
+            return
+        }
+
         if (root.persistHistory) {
+            root._persistPreferenceInitialized = true
             if (!root.ready || root.history.length === 0)
                 historyFile.reload()
             else
@@ -217,14 +225,24 @@ Singleton {
         }
 
         persistTimer.stop()
-        root.history = []
-        root.unread = 0
+        if (!root._persistPreferenceInitialized) {
+            root.history = []
+            root.unread = 0
+        }
         root.ready = true
+        root._persistPreferenceInitialized = true
         historyFile.setText("[]")
     }
 
     onPersistHistoryChanged: applyPersistenceMode()
     Component.onCompleted: applyPersistenceMode()
+
+    Connections {
+        target: ConfigService
+        function onReadyChanged() {
+            root.applyPersistenceMode()
+        }
+    }
 
     Timer {
         id: persistTimer
