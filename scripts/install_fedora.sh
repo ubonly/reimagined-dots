@@ -49,6 +49,7 @@ FEDORA_PACKAGES=(
     "hyprland"
     "jq"
     "bc"
+    "plasma-integration"
     "python3"
     "python3-pillow"
     "python3-dbus"
