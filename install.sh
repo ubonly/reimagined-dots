@@ -303,7 +303,7 @@ for file in kdeglobals Trolltech.conf gtkrc gtkrc-2.0; do
         echo "Копирование $file в ~/.config/..."
         cp "$SCRIPT_DIR/.config/$file" "$HOME/.config/$file"
     fi
-
+done
 find "$CONFIG_DIR" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} \; 2>/dev/null || true
 find "$MATUGEN_DIR" -type f -name '*.sh' -exec chmod +x {} \; 2>/dev/null || true
 
