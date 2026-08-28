@@ -144,6 +144,7 @@ install_apt_backports_available() {
 APT_BASE_PACKAGES=(
     "jq"
     "bc"
+    "plasma-integration"
     "python3"
     "python3-pillow"
     "python3-dbus"
