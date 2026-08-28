@@ -83,6 +83,7 @@ FEDORA_PACKAGES=(
     "xdg-desktop-portal"
     "xdg-desktop-portal-hyprland"
     "kitty"
+    "bash-completion"
     "fish"
     "playerctl"
     "polkit"

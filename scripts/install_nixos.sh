@@ -76,6 +76,7 @@ cat << 'EOF'
     curl
     zenity
     kitty
+    bash-completion
     fish
     starship
     playerctl

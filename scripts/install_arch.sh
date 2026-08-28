@@ -79,6 +79,7 @@ PACMAN_PACKAGES=(
     "unzip"
     "zenity"
     "kitty"
+    "bash-completion"
     "fish"
     "starship"
     "playerctl"

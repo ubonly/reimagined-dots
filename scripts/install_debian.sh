@@ -175,6 +175,7 @@ APT_BASE_PACKAGES=(
     "power-profiles-daemon"
     "fonts-roboto"
     "kitty"
+    "bash-completion"
     "fish"
     "starship"
     "playerctl"
