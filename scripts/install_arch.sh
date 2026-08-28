@@ -29,6 +29,7 @@ echo ""
 # 2. Pacman Packages
 PACMAN_PACKAGES=(
     "hyprland"
+    "plasma-integration"
     "quickshell"
     "hyprlock"
     "hyprpaper"
@@ -98,6 +99,7 @@ PACMAN_PACKAGES=(
 # 3. AUR Packages
 AUR_PACKAGES=(
     "ttf-material-symbols-variable-git"
+    "kde-material-you-colors"
 )
 
 echo "Установка пакетов из официальных репозиториев..."
