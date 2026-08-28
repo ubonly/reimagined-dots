@@ -298,12 +298,11 @@ backup_and_copy_dir "$SCRIPT_DIR/.config/quickshell" "$CONFIG_DIR" "конфиг
 backup_and_copy_dir "$SCRIPT_DIR/.config/matugen" "$MATUGEN_DIR" "конфиг Matugen"
 backup_and_copy_dir "$SCRIPT_DIR/.config/kitty" "$HOME/.config/kitty" "конфиг Kitty"
 
-for file in kdeglobals dolphinrc Trolltech.conf; do
+for file in kdeglobals Trolltech.conf gtkrc gtkrc-2.0; do
     if [ -f "$SCRIPT_DIR/.config/$file" ]; then
         echo "Копирование $file в ~/.config/..."
         cp "$SCRIPT_DIR/.config/$file" "$HOME/.config/$file"
     fi
-done
 
 find "$CONFIG_DIR" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} \; 2>/dev/null || true
 find "$MATUGEN_DIR" -type f -name '*.sh' -exec chmod +x {} \; 2>/dev/null || true
